@@ -43,14 +43,17 @@
    - Big "START WORKOUT" button
    - History/Settings navigation
 
-2. **Active Workout (`/workout`)**
-   - One exercise per screen (card-swipe design)
+2. **Active Workout (`/workout`)** ✅
+   - One exercise per screen (card-based design)
    - Shows target weight & reps (auto-calculated)
-   - Weight adjustment buttons (`+` / `-`)
-   - Set counter (e.g., "Set 1 / 3")
-   - "COMPLETE SET" button
-   - Rest timer (90s or 3min countdown)
-   - Navigation: Next exercise / Back
+   - Weight adjustment buttons (`+` / `-`) with visual feedback
+   - Set counter (e.g., "Set 1 / 3") with progress bar
+   - "COMPLETE SET" button with haptic feedback
+   - Rest timer (90s for accessory, 3min for main lifts, auto-start)
+   - Navigation: Next/Previous exercise buttons
+   - Wake Lock API (keeps screen on during workout)
+   - Workout completion flow with success screen
+   - Auto-save progress to localStorage on set completion
 
 3. **History & Settings (`/history` or `/settings`)**
    - Past workout history list
@@ -182,15 +185,15 @@ function shouldAdvanceWeek(workoutCompleted: boolean): boolean
 - [x] Navigation to history/settings
 - [x] Initial state setup (first-time user flow)
 
-### Phase 4: Active Workout View
-- [ ] Exercise card component (one per screen)
-- [ ] Exercise navigation (next/previous)
-- [ ] Weight display and adjustment
-- [ ] Set counter and completion tracking
-- [ ] "COMPLETE SET" button with haptic feedback
-- [ ] Rest timer integration
-- [ ] Workout completion flow
-- [ ] Auto-save on set completion
+### Phase 4: Active Workout View ✅ (Complete)
+- [x] Exercise card component (one per screen)
+- [x] Exercise navigation (next/previous)
+- [x] Weight display and adjustment
+- [x] Set counter and completion tracking
+- [x] "COMPLETE SET" button with haptic feedback
+- [x] Rest timer integration
+- [x] Workout completion flow
+- [x] Auto-save on set completion
 
 ### Phase 5: History & Settings
 - [ ] Workout history list view
@@ -204,8 +207,8 @@ function shouldAdvanceWeek(workoutCompleted: boolean): boolean
 ### Phase 6: PWA Enhancements
 - [x] Service worker (via vite-plugin-pwa)
 - [x] Web manifest
-- [ ] Wake Lock API integration (prevent screen sleep)
-- [ ] Haptic feedback (`navigator.vibrate()`)
+- [x] Wake Lock API integration (prevent screen sleep)
+- [x] Haptic feedback (`navigator.vibrate()`)
 - [ ] Offline detection and messaging
 - [ ] Install prompt handling
 
@@ -350,12 +353,12 @@ src/
 
 ## Next Steps
 
-1. **Immediate**: ✅ Phase 1 Complete - Data layer and stores are ready
-2. **Short-term**: Build dashboard view with week/day display (Phase 2 & 3)
-3. **Medium-term**: Implement active workout flow (Phase 4)
-4. **Long-term**: Add history, settings, and polish (Phase 5 & 7)
+1. **Immediate**: ✅ Phase 4 Complete - Active workout view is fully functional
+2. **Short-term**: Build history and settings views (Phase 5)
+3. **Medium-term**: Add PWA enhancements (offline detection, install prompts) and polish (Phase 6 & 7)
+4. **Long-term**: Future enhancements (multiple programs, charts, cloud sync, etc.)
 
 ---
 
-*Last Updated: Based on CLAUDE.md and current project structure*
+*Last Updated: Phase 4 (Active Workout View) completed - December 2024*
 

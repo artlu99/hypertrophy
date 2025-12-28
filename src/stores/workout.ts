@@ -11,6 +11,8 @@ import type {
   WorkoutSession,
   WorkoutDay,
   WeightUnit,
+  CompletedExercise,
+  CompletedSet,
 } from '../types/workout';
 import { DEFAULT_EXERCISES } from '../config/exercises';
 import { loadState, saveState } from '../utils/storage';
@@ -47,9 +49,20 @@ function createInitialState(): WorkoutState {
   };
 }
 
+// Active workout state (not persisted, only during active workout)
+interface ActiveWorkoutState {
+  currentExerciseIndex: number;
+  exercises: Exercise[];
+  completedExercises: CompletedExercise[];
+  startTime: string; // ISO date string
+}
+
 export const useWorkoutStore = defineStore('workout', () => {
   // State
   const state = ref<WorkoutState>(createInitialState());
+
+  // Active workout state (temporary, not persisted)
+  const activeWorkout = ref<ActiveWorkoutState | null>(null);
 
   // Initialize from localStorage
   const loaded = loadState();
@@ -167,6 +180,150 @@ export const useWorkoutStore = defineStore('workout', () => {
     return getTargetSets();
   }
 
+  // Active workout management
+  function startWorkout() {
+    const exercisesForDay = currentDayExercises.value;
+    if (exercisesForDay.length === 0) {
+      return;
+    }
+
+    activeWorkout.value = {
+      currentExerciseIndex: 0,
+      exercises: exercisesForDay,
+      completedExercises: exercisesForDay.map((ex) => ({
+        exerciseId: ex.id,
+        sets: [],
+      })),
+      startTime: new Date().toISOString(),
+    };
+  }
+
+  function getCurrentExercise(): Exercise | null {
+    if (!activeWorkout.value) return null;
+    const exercises = activeWorkout.value.exercises;
+    const index = activeWorkout.value.currentExerciseIndex;
+    return exercises[index] || null;
+  }
+
+  function getCurrentExerciseProgress(): {
+    currentSet: number;
+    totalSets: number;
+    completedSets: CompletedSet[];
+  } | null {
+    if (!activeWorkout.value) return null;
+    const currentEx = getCurrentExercise();
+    if (!currentEx) return null;
+
+    const completedEx = activeWorkout.value.completedExercises.find(
+      (ex) => ex.exerciseId === currentEx.id
+    );
+    const completedSets = completedEx?.sets || [];
+    const currentSet = completedSets.length + 1;
+    const totalSets = getTargetSetsForWeek();
+
+    return {
+      currentSet,
+      totalSets,
+      completedSets,
+    };
+  }
+
+  function updateActiveWorkoutWeight(exerciseId: number, weight: number) {
+    if (!activeWorkout.value) return;
+    // Update the exercise's current weight in the main state
+    updateExerciseWeight(exerciseId, weight);
+  }
+
+  function completeSet(weight: number, reps: number) {
+    if (!activeWorkout.value) return;
+
+    const currentEx = getCurrentExercise();
+    if (!currentEx) return;
+
+    const completedEx = activeWorkout.value.completedExercises.find(
+      (ex) => ex.exerciseId === currentEx.id
+    );
+    if (!completedEx) return;
+
+    // Add the completed set
+    completedEx.sets.push({
+      weight,
+      reps,
+      completed: true,
+    });
+
+    // Update exercise weight to the highest used
+    const maxWeight = Math.max(...completedEx.sets.map((s) => s.weight));
+    updateExerciseWeight(currentEx.id, maxWeight);
+
+    // Auto-save progress
+    // (state is already auto-saved via watch, but we can trigger explicit save if needed)
+  }
+
+  function nextExercise() {
+    if (!activeWorkout.value) return;
+    if (
+      activeWorkout.value.currentExerciseIndex <
+      activeWorkout.value.exercises.length - 1
+    ) {
+      activeWorkout.value.currentExerciseIndex += 1;
+    }
+  }
+
+  function previousExercise() {
+    if (!activeWorkout.value) return;
+    if (activeWorkout.value.currentExerciseIndex > 0) {
+      activeWorkout.value.currentExerciseIndex -= 1;
+    }
+  }
+
+  function isExerciseComplete(exerciseId: number): boolean {
+    if (!activeWorkout.value) return false;
+    const completedEx = activeWorkout.value.completedExercises.find(
+      (ex) => ex.exerciseId === exerciseId
+    );
+    if (!completedEx) return false;
+    return completedEx.sets.length >= getTargetSetsForWeek();
+  }
+
+  function isWorkoutComplete(): boolean {
+    if (!activeWorkout.value) return false;
+    return activeWorkout.value.exercises.every((ex) =>
+      isExerciseComplete(ex.id)
+    );
+  }
+
+  function finishWorkout() {
+    if (!activeWorkout.value) return;
+
+    const session: WorkoutSession = {
+      date: activeWorkout.value.startTime,
+      week: currentWeek.value,
+      day: currentDay.value,
+      exercises: activeWorkout.value.completedExercises,
+    };
+
+    completeWorkout(session);
+    activeWorkout.value = null;
+  }
+
+  function cancelWorkout() {
+    activeWorkout.value = null;
+  }
+
+  const isWorkoutActive = computed(() => activeWorkout.value !== null);
+  const canGoNext = computed(() => {
+    if (!activeWorkout.value) return false;
+    return (
+      activeWorkout.value.currentExerciseIndex <
+      activeWorkout.value.exercises.length - 1
+    );
+  });
+  const canGoPrevious = computed(() => {
+    if (!activeWorkout.value) return false;
+    return activeWorkout.value.currentExerciseIndex > 0;
+  });
+
   return {
     // State
     state,
@@ -188,6 +345,22 @@ export const useWorkoutStore = defineStore('workout', () => {
     getTargetWeightForExercise,
     getTargetRepsForWeek,
     getTargetSetsForWeek,
+    // Active workout
+    activeWorkout,
+    isWorkoutActive,
+    canGoNext,
+    canGoPrevious,
+    startWorkout,
+    getCurrentExercise,
+    getCurrentExerciseProgress,
+    updateActiveWorkoutWeight,
+    completeSet,
+    nextExercise,
+    previousExercise,
+    isExerciseComplete,
+    isWorkoutComplete,
+    finishWorkout,
+    cancelWorkout,
   };
 });
 
