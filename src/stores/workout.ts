@@ -3,26 +3,31 @@
  * Handles all workout data with localStorage persistence
  */
 
-import { ref, computed, watch } from 'vue';
-import { defineStore } from 'pinia';
+import { defineStore } from "pinia";
+import { computed, ref, watch } from "vue";
+import { DEFAULT_EXERCISES } from "../config/exercises";
 import type {
-  WorkoutState,
-  Exercise,
-  WorkoutSession,
-  WorkoutDay,
-  WeightUnit,
   CompletedExercise,
   CompletedSet,
-} from '../types/workout';
-import { DEFAULT_EXERCISES } from '../config/exercises';
-import { loadState, saveState } from '../utils/storage';
+  Exercise,
+  WeightUnit,
+  WorkoutDay,
+  WorkoutSession,
+  WorkoutState,
+} from "../types/workout";
 import {
-  getTargetWeight,
+  getNextDay,
   getTargetReps,
   getTargetSets,
+  getTargetWeight,
   shouldAdvanceWeek,
-  getNextDay,
-} from '../utils/progression';
+} from "../utils/progression";
+import {
+  exportState,
+  importState,
+  loadState,
+  saveState,
+} from "../utils/storage";
 
 /**
  * Create initial default state
@@ -35,12 +40,12 @@ function createInitialState(): WorkoutState {
 
   return {
     user: {
-      name: 'Lifter',
-      unit: 'kg',
+      name: "Lifter",
+      unit: "kg",
     },
     program: {
       currentWeek: 1,
-      currentDay: 'A',
+      currentDay: "A",
       lastWorkoutDate: null,
       totalWorkoutsCompleted: 0,
     },
@@ -57,7 +62,7 @@ interface ActiveWorkoutState {
   startTime: string; // ISO date string
 }
 
-export const useWorkoutStore = defineStore('workout', () => {
+export const useWorkoutStore = defineStore("workout", () => {
   // State
   const state = ref<WorkoutState>(createInitialState());
 
@@ -80,9 +85,7 @@ export const useWorkoutStore = defineStore('workout', () => {
 
   // Get exercises for current workout day
   const currentDayExercises = computed(() => {
-    return exercises.value.filter(
-      (ex) => ex.workoutDay === currentDay.value
-    );
+    return exercises.value.filter((ex) => ex.workoutDay === currentDay.value);
   });
 
   // Get next workout exercises
@@ -97,7 +100,7 @@ export const useWorkoutStore = defineStore('workout', () => {
     (newState) => {
       saveState(newState);
     },
-    { deep: true }
+    { deep: true },
   );
 
   // Actions
@@ -128,12 +131,12 @@ export const useWorkoutStore = defineStore('workout', () => {
     // Update exercise weights based on completed sets
     session.exercises.forEach((completedEx) => {
       const exercise = state.value.exercises.find(
-        (ex) => ex.id === completedEx.exerciseId
+        (ex) => ex.id === completedEx.exerciseId,
       );
       if (exercise && completedEx.sets.length > 0) {
         // Update to the highest weight used in the workout
         const maxWeight = Math.max(
-          ...completedEx.sets.map((set) => set.weight)
+          ...completedEx.sets.map((set) => set.weight),
         );
         exercise.currentWeight = maxWeight;
       }
@@ -149,7 +152,7 @@ export const useWorkoutStore = defineStore('workout', () => {
         state.value.program.currentWeek += 1;
       }
       // Reset to day A for next week
-      state.value.program.currentDay = 'A';
+      state.value.program.currentDay = "A";
     } else {
       // Switch to next day (though Workout B is currently empty)
       state.value.program.currentDay = getNextDay(currentDay.value);
@@ -165,11 +168,7 @@ export const useWorkoutStore = defineStore('workout', () => {
     if (!exercise) {
       return 0;
     }
-    return getTargetWeight(
-      exercise,
-      currentWeek.value,
-      state.value.user.unit
-    );
+    return getTargetWeight(exercise, currentWeek.value, state.value.user.unit);
   }
 
   function getTargetRepsForWeek(): number {
@@ -184,7 +183,7 @@ export const useWorkoutStore = defineStore('workout', () => {
   function startWorkout() {
     const exercisesForDay = currentDayExercises.value;
     if (exercisesForDay.length === 0) {
-      console.warn('No exercises found for current day');
+      console.warn("No exercises found for current day");
       return;
     }
 
@@ -216,7 +215,7 @@ export const useWorkoutStore = defineStore('workout', () => {
     if (!currentEx) return null;
 
     const completedEx = activeWorkout.value.completedExercises.find(
-      (ex) => ex.exerciseId === currentEx.id
+      (ex) => ex.exerciseId === currentEx.id,
     );
     const completedSets = completedEx?.sets || [];
     const currentSet = completedSets.length + 1;
@@ -242,7 +241,7 @@ export const useWorkoutStore = defineStore('workout', () => {
     if (!currentEx) return;
 
     const completedEx = activeWorkout.value.completedExercises.find(
-      (ex) => ex.exerciseId === currentEx.id
+      (ex) => ex.exerciseId === currentEx.id,
     );
     if (!completedEx) return;
 
@@ -281,7 +280,7 @@ export const useWorkoutStore = defineStore('workout', () => {
   function isExerciseComplete(exerciseId: number): boolean {
     if (!activeWorkout.value) return false;
     const completedEx = activeWorkout.value.completedExercises.find(
-      (ex) => ex.exerciseId === exerciseId
+      (ex) => ex.exerciseId === exerciseId,
     );
     if (!completedEx) return false;
     return completedEx.sets.length >= getTargetSetsForWeek();
@@ -290,7 +289,7 @@ export const useWorkoutStore = defineStore('workout', () => {
   function isWorkoutComplete(): boolean {
     if (!activeWorkout.value) return false;
     return activeWorkout.value.exercises.every((ex) =>
-      isExerciseComplete(ex.id)
+      isExerciseComplete(ex.id),
     );
   }
 
@@ -310,6 +309,52 @@ export const useWorkoutStore = defineStore('workout', () => {
 
   function cancelWorkout() {
     activeWorkout.value = null;
+  }
+
+  // Export/Import functionality
+  function exportData(): string {
+    return exportState(state.value);
+  }
+
+  function importData(json: string): { success: boolean; error?: string } {
+    if (!activeWorkout.value) {
+      const imported = importState(json);
+      if (!imported) {
+        return { success: false, error: "Invalid JSON format" };
+      }
+
+      // Validate the imported data structure
+      if (
+        !imported.user ||
+        !imported.program ||
+        !imported.exercises ||
+        !imported.workoutHistory
+      ) {
+        return { success: false, error: "Invalid data structure" };
+      }
+
+      // Validate exercises array
+      if (
+        !Array.isArray(imported.exercises) ||
+        imported.exercises.length === 0
+      ) {
+        return { success: false, error: "No exercises found" };
+      }
+
+      // Validate workout history
+      if (!Array.isArray(imported.workoutHistory)) {
+        return { success: false, error: "Invalid workout history format" };
+      }
+
+      // Replace current state with imported data
+      state.value = imported;
+      return { success: true };
+    } else {
+      return {
+        success: false,
+        error: "Cannot import data while a workout is active",
+      };
+    }
   }
 
   const isWorkoutActive = computed(() => activeWorkout.value !== null);
@@ -362,6 +407,8 @@ export const useWorkoutStore = defineStore('workout', () => {
     isWorkoutComplete,
     finishWorkout,
     cancelWorkout,
+    // Export/Import
+    exportData,
+    importData,
   };
 });
-
