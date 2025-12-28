@@ -21,6 +21,12 @@ const router = createRouter({
       // Lazy load history view
       component: () => import('../views/HistoryView.vue'),
     },
+    {
+      path: '/settings',
+      name: 'settings',
+      // Lazy load settings view
+      component: () => import('../views/SettingsView.vue'),
+    },
   ],
 })
 

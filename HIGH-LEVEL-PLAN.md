@@ -55,11 +55,13 @@
    - Workout completion flow with success screen
    - Auto-save progress to localStorage on set completion
 
-3. **History & Settings (`/history` or `/settings`)**
-   - Past workout history list
-   - Starting weights configuration
-   - Unit preference (kg/lbs)
-   - Reset program option
+3. **History & Settings (`/history` and `/settings`)** ✅
+   - Workout history list with date formatting and stats
+   - Detailed workout view with exercise breakdown
+   - Settings page with unit preference toggle (kg/lbs)
+   - Starting weights configuration for all exercises
+   - Program management with reset functionality
+   - Change detection and save/cancel actions
 
 ---
 
@@ -195,14 +197,13 @@ function shouldAdvanceWeek(workoutCompleted: boolean): boolean
 - [x] Workout completion flow
 - [x] Auto-save on set completion
 
-### Phase 5: History & Settings
-- [ ] Workout history list view
-- [ ] Workout detail view
-- [ ] Settings page:
+### Phase 5: History & Settings ✅ (Complete)
+- [x] Workout history list view
+- [x] Workout detail view
+- [x] Settings page:
   - Starting weights configuration
   - Unit preference (kg/lbs)
   - Reset program
-- [ ] Data export/import (future)
 
 ### Phase 6: PWA Enhancements
 - [x] Service worker (via vite-plugin-pwa)
@@ -264,15 +265,24 @@ src/
 │   │   ├── WeightAdjuster.vue
 │   │   ├── SetCounter.vue
 │   │   └── RestTimer.vue
+│   ├── workout/
+│   │   ├── ExerciseCard.vue
+│   │   └── SetCounter.vue
+│   ├── history/
+│   │   ├── WorkoutHistoryList.vue
+│   │   └── WorkoutDetail.vue
 │   ├── dashboard/
-│   │   ├── WeekProgress.vue
+│   │   ├── WeekDayDisplay.vue
 │   │   ├── NextWorkoutPreview.vue
 │   │   └── StartWorkoutButton.vue
 │   ├── common/
 │   │   ├── BigButton.vue
-│   │   └── ProgressBar.vue
+│   │   ├── ProgressBar.vue
+│   │   ├── WeightAdjuster.vue
+│   │   └── RestTimer.vue
 │   └── layout/
-│       └── AppLayout.vue
+│       ├── AppLayout.vue
+│       └── ScreenContainer.vue
 ├── stores/
 │   ├── workout.ts (main workout state)
 │   ├── program.ts (program configuration)
@@ -284,7 +294,8 @@ src/
 ├── views/
 │   ├── DashboardView.vue
 │   ├── WorkoutView.vue
-│   └── HistoryView.vue
+│   ├── HistoryView.vue
+│   └── SettingsView.vue
 ├── router/
 │   └── index.ts
 └── main.ts
@@ -353,12 +364,12 @@ src/
 
 ## Next Steps
 
-1. **Immediate**: ✅ Phase 4 Complete - Active workout view is fully functional
-2. **Short-term**: Build history and settings views (Phase 5)
-3. **Medium-term**: Add PWA enhancements (offline detection, install prompts) and polish (Phase 6 & 7)
+1. **Immediate**: ✅ Phase 5 Complete - History and Settings fully implemented
+2. **Short-term**: Add remaining PWA enhancements (offline detection, install prompts) - Phase 6
+3. **Medium-term**: Polish and optimization (animations, error handling, accessibility) - Phase 7
 4. **Long-term**: Future enhancements (multiple programs, charts, cloud sync, etc.)
 
 ---
 
-*Last Updated: Phase 4 (Active Workout View) completed - December 2024*
+*Last Updated: Phase 5 (History & Settings) completed - December 2024*
 

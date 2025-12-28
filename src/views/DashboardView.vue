@@ -25,6 +25,10 @@ function handleStartWorkout() {
 function handleViewHistory() {
   router.push('/history');
 }
+
+function handleViewSettings() {
+  router.push('/settings');
+}
 </script>
 
 <template>
@@ -64,6 +68,13 @@ function handleViewHistory() {
             full-width
             @click="handleViewHistory"
           />
+          <BigButton
+            label="Settings"
+            variant="secondary"
+            size="md"
+            full-width
+            @click="handleViewSettings"
+          />
         </div>
       </div>
     </ScreenContainer>
@@ -99,6 +110,9 @@ function handleViewHistory() {
 }
 
 .dashboard__nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
   width: 100%;
   margin-top: var(--spacing-lg);
 }
