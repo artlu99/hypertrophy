@@ -36,6 +36,8 @@ function createInitialState(): WorkoutState {
   const exercises: Exercise[] = DEFAULT_EXERCISES.map((ex) => ({
     ...ex,
     currentWeight: ex.baseWeight,
+    currentTime: ex.currentTime || ex.baseTime || undefined,
+    currentReps: ex.currentReps || ex.baseReps || undefined,
   }));
 
   return {
@@ -60,6 +62,9 @@ interface ActiveWorkoutState {
   exercises: Exercise[];
   completedExercises: CompletedExercise[];
   startTime: string; // ISO date string
+  // Track current values for active exercise
+  currentReps: Map<number, number>; // exerciseId -> current reps
+  currentTime: Map<number, number>; // exerciseId -> current target time (seconds)
 }
 
 export const useWorkoutStore = defineStore("workout", () => {
@@ -121,6 +126,22 @@ export const useWorkoutStore = defineStore("workout", () => {
     if (exercise) {
       exercise.baseWeight = baseWeight;
       exercise.currentWeight = baseWeight;
+    }
+  }
+
+  function updateExerciseBaseReps(exerciseId: number, baseReps: number) {
+    const exercise = state.value.exercises.find((ex) => ex.id === exerciseId);
+    if (exercise) {
+      exercise.baseReps = baseReps;
+      exercise.currentReps = baseReps;
+    }
+  }
+
+  function updateExerciseBaseTime(exerciseId: number, baseTime: number) {
+    const exercise = state.value.exercises.find((ex) => ex.id === exerciseId);
+    if (exercise) {
+      exercise.baseTime = baseTime;
+      exercise.currentTime = baseTime;
     }
   }
 
@@ -195,6 +216,12 @@ export const useWorkoutStore = defineStore("workout", () => {
         sets: [],
       })),
       startTime: new Date().toISOString(),
+      currentReps: new Map(),
+      currentTime: new Map(
+        exercisesForDay
+          .filter((ex) => ex.trackingType === 'time')
+          .map((ex) => [ex.id, ex.currentTime || ex.baseTime || 30])
+      ),
     };
   }
 
@@ -234,7 +261,41 @@ export const useWorkoutStore = defineStore("workout", () => {
     updateExerciseWeight(exerciseId, weight);
   }
 
-  function completeSet(weight: number, reps: number) {
+  function updateActiveWorkoutReps(exerciseId: number, reps: number) {
+    if (!activeWorkout.value) return;
+    activeWorkout.value.currentReps.set(exerciseId, reps);
+  }
+
+  function updateActiveWorkoutTime(exerciseId: number, time: number) {
+    if (!activeWorkout.value) return;
+    activeWorkout.value.currentTime.set(exerciseId, time);
+    // Also update the exercise's currentTime in the main state
+    const exercise = state.value.exercises.find((ex) => ex.id === exerciseId);
+    if (exercise) {
+      exercise.currentTime = time;
+    }
+  }
+
+  function getCurrentReps(exerciseId: number): number {
+    if (!activeWorkout.value) {
+      // If no active workout, return the exercise's stored currentReps
+      const exercise = state.value.exercises.find((ex) => ex.id === exerciseId);
+      return exercise?.currentReps || exercise?.baseReps || 0;
+    }
+    // During active workout, use the tracked reps or fall back to stored value
+    const trackedReps = activeWorkout.value.currentReps.get(exerciseId);
+    if (trackedReps !== undefined) return trackedReps;
+    const exercise = state.value.exercises.find((ex) => ex.id === exerciseId);
+    return exercise?.currentReps || exercise?.baseReps || 0;
+  }
+
+  function getCurrentTime(exerciseId: number): number {
+    if (!activeWorkout.value) return 30;
+    const exercise = state.value.exercises.find((ex) => ex.id === exerciseId);
+    return activeWorkout.value.currentTime.get(exerciseId) || exercise?.currentTime || exercise?.baseTime || 30;
+  }
+
+  function completeSet(weight: number, reps: number, time?: number) {
     if (!activeWorkout.value) return;
 
     const currentEx = getCurrentExercise();
@@ -245,16 +306,50 @@ export const useWorkoutStore = defineStore("workout", () => {
     );
     if (!completedEx) return;
 
+    // Determine actual values based on tracking type
+    const trackingType = currentEx.trackingType || 'weight';
+    let actualWeight = weight;
+    let actualReps = reps;
+    let actualTime = time;
+
+    if (trackingType === 'reps') {
+      // For reps-based, use the tracked reps
+      actualReps = activeWorkout.value.currentReps.get(currentEx.id) || reps;
+      actualWeight = 0; // No weight for reps-based
+    } else if (trackingType === 'time') {
+      // For time-based, use the tracked time
+      actualTime = activeWorkout.value.currentTime.get(currentEx.id) || time || 30;
+      actualWeight = 0; // No weight for time-based
+      actualReps = 0; // No reps for time-based
+    }
+
     // Add the completed set
     completedEx.sets.push({
-      weight,
-      reps,
+      weight: actualWeight,
+      reps: actualReps,
+      time: actualTime,
       completed: true,
     });
 
-    // Update exercise weight to the highest used
-    const maxWeight = Math.max(...completedEx.sets.map((s) => s.weight));
-    updateExerciseWeight(currentEx.id, maxWeight);
+    // Update exercise values based on tracking type
+    if (trackingType === 'weight') {
+      // Update weight to the highest used
+      const maxWeight = Math.max(...completedEx.sets.map((s) => s.weight));
+      updateExerciseWeight(currentEx.id, maxWeight);
+    } else if (trackingType === 'reps') {
+      // Update reps to the highest achieved
+      const allReps = completedEx.sets.map((s) => s.reps).filter((r) => r > 0);
+      if (allReps.length > 0) {
+        const maxReps = Math.max(...allReps);
+        const exercise = state.value.exercises.find((ex) => ex.id === currentEx.id);
+        if (exercise) {
+          exercise.currentReps = maxReps;
+        }
+      }
+    } else if (trackingType === 'time') {
+      // Time is already updated via updateActiveWorkoutTime
+      // Could track max time achieved if needed
+    }
 
     // Auto-save progress
     // (state is already auto-saved via watch, but we can trigger explicit save if needed)
@@ -386,6 +481,8 @@ export const useWorkoutStore = defineStore("workout", () => {
     updateUser,
     updateExerciseWeight,
     updateExerciseBaseWeight,
+    updateExerciseBaseReps,
+    updateExerciseBaseTime,
     completeWorkout,
     resetProgram,
     getTargetWeightForExercise,
@@ -400,6 +497,10 @@ export const useWorkoutStore = defineStore("workout", () => {
     getCurrentExercise,
     getCurrentExerciseProgress,
     updateActiveWorkoutWeight,
+    updateActiveWorkoutReps,
+    updateActiveWorkoutTime,
+    getCurrentReps,
+    getCurrentTime,
     completeSet,
     nextExercise,
     previousExercise,

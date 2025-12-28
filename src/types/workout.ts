@@ -4,6 +4,7 @@
 
 export type WeightUnit = 'kg' | 'lbs';
 export type WorkoutDay = 'A' | 'B';
+export type ExerciseTrackingType = 'weight' | 'reps' | 'time';
 
 export interface Exercise {
   id: number;
@@ -11,11 +12,17 @@ export interface Exercise {
   baseWeight: number;
   currentWeight: number;
   workoutDay: WorkoutDay; // Which day this exercise belongs to
+  trackingType?: ExerciseTrackingType; // How this exercise is tracked (default: 'weight')
+  baseTime?: number; // Base time in seconds for time-based exercises (e.g., Plank)
+  currentTime?: number; // Current target time in seconds for time-based exercises
+  baseReps?: number; // Base/target reps for reps-based exercises (e.g., Push-Ups)
+  currentReps?: number; // Typical/average reps achieved for progression tracking
 }
 
 export interface CompletedSet {
-  weight: number;
-  reps: number;
+  weight: number; // For weight-based exercises
+  reps: number; // For reps-based exercises (or weight-based)
+  time?: number; // For time-based exercises (in seconds)
   completed: boolean;
 }
 

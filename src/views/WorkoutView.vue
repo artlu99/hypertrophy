@@ -82,9 +82,24 @@ const currentWeight = computed(() => {
   return currentExercise.value.currentWeight;
 });
 
+const currentReps = computed(() => {
+  if (!currentExercise.value) return 0;
+  return workoutStore.getCurrentReps(currentExercise.value.id);
+});
+
+const currentTime = computed(() => {
+  if (!currentExercise.value) return 30;
+  return workoutStore.getCurrentTime(currentExercise.value.id);
+});
+
 const isCurrentExerciseComplete = computed(() => {
   if (!currentExercise.value) return false;
   return workoutStore.isExerciseComplete(currentExercise.value.id);
+});
+
+const trackingType = computed(() => {
+  if (!currentExercise.value) return 'weight';
+  return currentExercise.value.trackingType || 'weight';
 });
 
 function handleWeightChange(weight: number) {
@@ -92,16 +107,42 @@ function handleWeightChange(weight: number) {
   workoutStore.updateActiveWorkoutWeight(currentExercise.value.id, weight);
 }
 
+function handleRepsChange(reps: number) {
+  if (!currentExercise.value) return;
+  workoutStore.updateActiveWorkoutReps(currentExercise.value.id, reps);
+}
+
+function handleTimeChange(time: number) {
+  if (!currentExercise.value) return;
+  workoutStore.updateActiveWorkoutTime(currentExercise.value.id, time);
+}
+
 function handleCompleteSet() {
   if (!currentExercise.value || !exerciseProgress.value) return;
   
   const weight = currentWeight.value;
-  const reps = targetReps.value;
+  const reps = trackingType.value === 'reps' ? currentReps.value : targetReps.value;
+  const time = trackingType.value === 'time' ? currentTime.value : undefined;
   
   // Store the current set number before completing
   const setJustCompleted = exerciseProgress.value.currentSet;
   
-  workoutStore.completeSet(weight, reps);
+  workoutStore.completeSet(weight, reps, time);
+  
+  // For time-based exercises, the timer completion triggers this, so don't show rest timer
+  if (trackingType.value === 'time') {
+    // After time-based exercise completes, check if workout is complete
+    const updatedProgress = workoutStore.getCurrentExerciseProgress();
+    if (updatedProgress && updatedProgress.currentSet > targetSets.value) {
+      // Exercise complete, check if workout is complete
+      if (workoutStore.isWorkoutComplete()) {
+        handleWorkoutComplete();
+      } else {
+        workoutStore.nextExercise();
+      }
+    }
+    return;
+  }
   
   // After completing, check if there are more sets for this exercise
   // If we just completed set 3 of 3, then currentSet will now be 4
@@ -210,10 +251,14 @@ const isWorkoutComplete = computed(() => workoutStore.isWorkoutComplete());
             :target-sets="targetSets"
             :current-set="exerciseProgress.currentSet"
             :current-weight="currentWeight"
+            :current-reps="currentReps"
+            :current-time="currentTime"
             :unit="workoutStore.unit"
-            :show-rest-timer="showRestTimer && !isCurrentExerciseComplete"
+            :show-rest-timer="showRestTimer && !isCurrentExerciseComplete && trackingType !== 'time'"
             :disabled="isCurrentExerciseComplete"
             @weight-change="handleWeightChange"
+            @reps-change="handleRepsChange"
+            @time-change="handleTimeChange"
             @complete-set="handleCompleteSet"
             @rest-complete="handleRestComplete"
           />

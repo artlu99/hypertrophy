@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import BigButton from "../components/common/BigButton.vue";
 import WeightAdjuster from "../components/common/WeightAdjuster.vue";
+import RepsAdjuster from "../components/common/RepsAdjuster.vue";
 import AppLayout from "../components/layout/AppLayout.vue";
 import ScreenContainer from "../components/layout/ScreenContainer.vue";
 import { useWorkoutStore } from "../stores/workout";
@@ -11,19 +12,27 @@ const router = useRouter();
 const workoutStore = useWorkoutStore();
 
 const unit = ref(workoutStore.unit);
-const exerciseWeights = ref(
+const exerciseSettings = ref(
 	workoutStore.exercises.map((ex) => ({
 		id: ex.id,
 		name: ex.name,
+		trackingType: ex.trackingType || 'weight',
 		baseWeight: ex.baseWeight,
+		baseReps: ex.baseReps,
+		baseTime: ex.baseTime,
 	})),
 );
 
 const hasChanges = computed(() => {
 	if (unit.value !== workoutStore.unit) return true;
-	return exerciseWeights.value.some((ex) => {
+	return exerciseSettings.value.some((ex) => {
 		const original = workoutStore.exercises.find((e) => e.id === ex.id);
-		return original && ex.baseWeight !== original.baseWeight;
+		if (!original) return false;
+		return (
+			ex.baseWeight !== original.baseWeight ||
+			ex.baseReps !== original.baseReps ||
+			ex.baseTime !== original.baseTime
+		);
 	});
 });
 
@@ -32,9 +41,23 @@ function handleUnitChange(newUnit: "kg" | "lbs") {
 }
 
 function handleWeightChange(exerciseId: number, weight: number) {
-	const exercise = exerciseWeights.value.find((ex) => ex.id === exerciseId);
+	const exercise = exerciseSettings.value.find((ex) => ex.id === exerciseId);
 	if (exercise) {
 		exercise.baseWeight = weight;
+	}
+}
+
+function handleRepsChange(exerciseId: number, reps: number) {
+	const exercise = exerciseSettings.value.find((ex) => ex.id === exerciseId);
+	if (exercise) {
+		exercise.baseReps = reps;
+	}
+}
+
+function handleTimeChange(exerciseId: number, time: number) {
+	const exercise = exerciseSettings.value.find((ex) => ex.id === exerciseId);
+	if (exercise) {
+		exercise.baseTime = time;
 	}
 }
 
@@ -44,9 +67,18 @@ function handleSave() {
 		workoutStore.updateUser(workoutStore.user.name, unit.value);
 	}
 
-	// Update base weights
-	exerciseWeights.value.forEach((ex) => {
-		workoutStore.updateExerciseBaseWeight(ex.id, ex.baseWeight);
+	// Update exercise settings based on tracking type
+	exerciseSettings.value.forEach((ex) => {
+		const original = workoutStore.exercises.find((e) => e.id === ex.id);
+		if (!original) return;
+
+		if (ex.trackingType === 'weight' && ex.baseWeight !== original.baseWeight) {
+			workoutStore.updateExerciseBaseWeight(ex.id, ex.baseWeight);
+		} else if (ex.trackingType === 'reps' && ex.baseReps !== original.baseReps) {
+			workoutStore.updateExerciseBaseReps(ex.id, ex.baseReps || 10);
+		} else if (ex.trackingType === 'time' && ex.baseTime !== original.baseTime) {
+			workoutStore.updateExerciseBaseTime(ex.id, ex.baseTime || 30);
+		}
 	});
 
 	router.push("/");
@@ -61,10 +93,13 @@ function handleReset() {
 		workoutStore.resetProgram();
 		// Reset local state
 		unit.value = workoutStore.unit;
-		exerciseWeights.value = workoutStore.exercises.map((ex) => ({
+		exerciseSettings.value = workoutStore.exercises.map((ex) => ({
 			id: ex.id,
 			name: ex.name,
+			trackingType: ex.trackingType || 'weight',
 			baseWeight: ex.baseWeight,
+			baseReps: ex.baseReps,
+			baseTime: ex.baseTime,
 		}));
 		router.push("/");
 	}
@@ -142,10 +177,13 @@ function handleImport(json: string) {
 		}
 		// Reset local state to match imported data
 		unit.value = workoutStore.unit;
-		exerciseWeights.value = workoutStore.exercises.map((ex) => ({
+		exerciseSettings.value = workoutStore.exercises.map((ex) => ({
 			id: ex.id,
 			name: ex.name,
+			trackingType: ex.trackingType || 'weight',
 			baseWeight: ex.baseWeight,
+			baseReps: ex.baseReps,
+			baseTime: ex.baseTime,
 		}));
 		// Clear success message after 3 seconds
 		setTimeout(() => {
@@ -162,10 +200,13 @@ watch(
 	() => {
 		if (router.currentRoute.value.path !== "/settings") {
 			unit.value = workoutStore.unit;
-			exerciseWeights.value = workoutStore.exercises.map((ex) => ({
+			exerciseSettings.value = workoutStore.exercises.map((ex) => ({
 				id: ex.id,
 				name: ex.name,
+				trackingType: ex.trackingType || 'weight',
 				baseWeight: ex.baseWeight,
+				baseReps: ex.baseReps,
+				baseTime: ex.baseTime,
 			}));
 		}
 	},
@@ -201,14 +242,14 @@ watch(
         </div>
 
         <div class="settings-view__section">
-          <h2 class="settings-view__section-title">Starting Weights</h2>
+          <h2 class="settings-view__section-title">Exercise Settings</h2>
           <p class="settings-view__section-description">
-            Set your starting weights for each exercise. These will be used as the base for
+            Set your starting values for each exercise. These will be used as the base for
             progression calculations.
           </p>
           <div class="settings-view__exercises">
             <div
-              v-for="exercise in exerciseWeights"
+              v-for="exercise in exerciseSettings"
               :key="exercise.id"
               class="settings-view__exercise"
             >
@@ -218,14 +259,55 @@ watch(
                   {{ workoutStore.exercises.find((e) => e.id === exercise.id)?.workoutDay }}
                 </span>
               </div>
-              <WeightAdjuster
-                :value="exercise.baseWeight"
-                :unit="unit"
-                :min="0"
-                :max="1000"
-                :step="unit === 'kg' ? 2.5 : 5"
-                @update:value="(weight) => handleWeightChange(exercise.id, weight)"
-              />
+              
+              <!-- Weight-based exercises -->
+              <div v-if="exercise.trackingType === 'weight'" class="settings-view__exercise-control">
+                <label class="settings-view__control-label">Starting Weight</label>
+                <WeightAdjuster
+                  :value="exercise.baseWeight"
+                  :unit="unit"
+                  :min="0"
+                  :max="1000"
+                  :step="unit === 'kg' ? 2.5 : 5"
+                  @update:value="(weight) => handleWeightChange(exercise.id, weight)"
+                />
+              </div>
+              
+              <!-- Reps-based exercises -->
+              <div v-else-if="exercise.trackingType === 'reps'" class="settings-view__exercise-control">
+                <label class="settings-view__control-label">Starting Reps</label>
+                <RepsAdjuster
+                  :value="exercise.baseReps || 10"
+                  :min="1"
+                  :max="200"
+                  :step="1"
+                  @update:value="(reps) => handleRepsChange(exercise.id, reps)"
+                />
+              </div>
+              
+              <!-- Time-based exercises -->
+              <div v-else-if="exercise.trackingType === 'time'" class="settings-view__exercise-control">
+                <label class="settings-view__control-label">Starting Time (seconds)</label>
+                <div class="settings-view__time-control">
+                  <button
+                    class="settings-view__time-button"
+                    @click="handleTimeChange(exercise.id, (exercise.baseTime || 30) - 5)"
+                    :disabled="(exercise.baseTime || 30) <= 5"
+                  >
+                    −5s
+                  </button>
+                  <span class="settings-view__time-display">
+                    {{ Math.floor((exercise.baseTime || 30) / 60) }}:{{ ((exercise.baseTime || 30) % 60).toString().padStart(2, '0') }}
+                  </span>
+                  <button
+                    class="settings-view__time-button"
+                    @click="handleTimeChange(exercise.id, (exercise.baseTime || 30) + 5)"
+                    :disabled="(exercise.baseTime || 30) >= 600"
+                  >
+                    +5s
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -603,6 +685,67 @@ watch(
 .settings-view__error-icon {
   flex-shrink: 0;
   font-size: var(--font-size-lg);
+}
+
+.settings-view__exercise-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.settings-view__control-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.settings-view__time-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md);
+}
+
+.settings-view__time-button {
+  min-width: 60px;
+  min-height: 48px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-bg-tertiary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.settings-view__time-button:hover:not(:disabled) {
+  background-color: var(--color-bg-secondary);
+  border-color: var(--color-accent);
+  transform: scale(1.05);
+}
+
+.settings-view__time-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.settings-view__time-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.settings-view__time-display {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  min-width: 80px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .settings-view__error-close {

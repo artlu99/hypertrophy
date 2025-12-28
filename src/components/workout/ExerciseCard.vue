@@ -2,6 +2,8 @@
 import { computed, ref, watch, nextTick } from 'vue';
 import type { Exercise } from '../../types/workout';
 import WeightAdjuster from '../common/WeightAdjuster.vue';
+import RepsAdjuster from '../common/RepsAdjuster.vue';
+import ExerciseTimer from '../common/ExerciseTimer.vue';
 import SetCounter from './SetCounter.vue';
 import RestTimer from '../common/RestTimer.vue';
 import BigButton from '../common/BigButton.vue';
@@ -13,6 +15,8 @@ interface Props {
   targetSets: number;
   currentSet: number; // 1-based
   currentWeight: number;
+  currentReps?: number; // For reps-based exercises
+  currentTime?: number; // For time-based exercises (target time in seconds)
   unit: 'kg' | 'lbs';
   showRestTimer?: boolean;
   restDuration?: number; // in seconds
@@ -23,6 +27,8 @@ const props = withDefaults(defineProps<Props>(), {
   showRestTimer: false,
   restDuration: 90,
   disabled: false,
+  currentReps: 10,
+  currentTime: 30,
 });
 
 const isExerciseComplete = computed(() => {
@@ -31,6 +37,8 @@ const isExerciseComplete = computed(() => {
 
 const emit = defineEmits<{
   'weight-change': [weight: number];
+  'reps-change': [reps: number];
+  'time-change': [time: number];
   'complete-set': [];
   'rest-complete': [];
 }>();
@@ -55,17 +63,22 @@ const restDurationForExercise = computed(() => {
   return isMainLift.value ? 180 : 90;
 });
 
-const isBodyweightExercise = computed(() => {
-  // Bodyweight exercises have baseWeight of 0
-  return props.exercise.baseWeight === 0;
+const trackingType = computed(() => {
+  return props.exercise.trackingType || 'weight';
 });
 
+const isWeightBased = computed(() => trackingType.value === 'weight');
+const isRepsBased = computed(() => trackingType.value === 'reps');
+const isTimeBased = computed(() => trackingType.value === 'time');
+
 const displayWeight = computed(() => {
-  if (isBodyweightExercise.value) {
-    return 'Bodyweight';
+  if (isWeightBased.value) {
+    return `${props.targetWeight.toFixed(props.unit === 'kg' ? 1 : 0)} ${props.unit}`;
   }
-  return `${props.targetWeight.toFixed(props.unit === 'kg' ? 1 : 0)} ${props.unit}`;
+  return 'Bodyweight';
 });
+
+const exerciseTimerRef = ref<InstanceType<typeof ExerciseTimer> | null>(null);
 
 const weightDifference = computed(() => {
   const diff = props.currentWeight - props.targetWeight;
@@ -102,20 +115,25 @@ watch(
     <div class="exercise-card__header">
       <h2 class="exercise-card__name">{{ exercise.name }}</h2>
       <div class="exercise-card__targets">
-        <div class="exercise-card__target">
+        <div v-if="isWeightBased" class="exercise-card__target">
           <span class="exercise-card__target-label">Target Weight</span>
           <span class="exercise-card__target-value">{{ displayWeight }}</span>
         </div>
+        <div v-if="isTimeBased" class="exercise-card__target">
+          <span class="exercise-card__target-label">Target Time</span>
+          <span class="exercise-card__target-value">{{ Math.floor((currentTime || 30) / 60) }}:{{ ((currentTime || 30) % 60).toString().padStart(2, '0') }}</span>
+        </div>
         <div class="exercise-card__target">
-          <span class="exercise-card__target-label">Target Reps</span>
-          <span class="exercise-card__target-value">{{ targetReps }}</span>
+          <span class="exercise-card__target-label">{{ isTimeBased ? 'Sets' : 'Target Reps' }}</span>
+          <span class="exercise-card__target-value">{{ isTimeBased ? targetSets : targetReps }}</span>
         </div>
       </div>
     </div>
 
     <SetCounter :current-set="currentSet" :total-sets="targetSets" />
 
-    <div v-if="!isBodyweightExercise" class="exercise-card__weight-section">
+    <!-- Weight-based exercises -->
+    <div v-if="isWeightBased" class="exercise-card__weight-section">
       <div class="exercise-card__current-weight">
         <span class="exercise-card__current-label">Current Weight</span>
         <WeightAdjuster
@@ -132,10 +150,32 @@ watch(
         </div>
       </div>
     </div>
-    <div v-else class="exercise-card__bodyweight-notice">
-      <p class="exercise-card__bodyweight-text">Bodyweight Exercise</p>
-      <p v-if="exercise.name === 'Push-Ups'" class="exercise-card__bodyweight-hint">Do as many reps as possible (to failure)</p>
-      <p v-else-if="exercise.name === 'Plank'" class="exercise-card__bodyweight-hint">Hold for as long as possible</p>
+
+    <!-- Reps-based exercises (Push-Ups) -->
+    <div v-else-if="isRepsBased" class="exercise-card__reps-section">
+      <div class="exercise-card__current-reps">
+        <span class="exercise-card__current-label">Reps Completed</span>
+        <RepsAdjuster
+          :value="currentReps"
+          :min="0"
+          :max="200"
+          :step="1"
+          @update:value="(reps) => emit('reps-change', reps)"
+        />
+        <p class="exercise-card__reps-hint">Do as many reps as possible (to failure)</p>
+      </div>
+    </div>
+
+    <!-- Time-based exercises (Plank) -->
+    <div v-else-if="isTimeBased" class="exercise-card__time-section">
+      <ExerciseTimer
+        ref="exerciseTimerRef"
+        :duration="currentTime || 30"
+        :auto-start="false"
+        :show-controls="true"
+        @complete="() => emit('complete-set')"
+        @time-change="(time) => emit('time-change', time)"
+      />
     </div>
 
     <div v-if="showRestTimer" class="exercise-card__rest">
@@ -288,6 +328,31 @@ watch(
   margin: 0;
   text-align: center;
   font-style: italic;
+}
+
+.exercise-card__reps-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.exercise-card__current-reps {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.exercise-card__reps-hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  text-align: center;
+  font-style: italic;
+}
+
+.exercise-card__time-section {
+  width: 100%;
 }
 
 .exercise-card__rest {
