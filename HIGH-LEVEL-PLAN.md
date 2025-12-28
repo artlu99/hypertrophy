@@ -162,25 +162,25 @@ function shouldAdvanceWeek(workoutCompleted: boolean): boolean
 - [x] Progression calculation utilities
 - [x] LocalStorage persistence layer
 
-### Phase 2: UI Foundation
-- [ ] Dark mode theme system (CSS variables)
-- [ ] Typography system (large, high-contrast numbers)
-- [ ] Component library foundation:
+### Phase 2: UI Foundation ✅ (Complete)
+- [x] Dark mode theme system (CSS variables)
+- [x] Typography system (large, high-contrast numbers)
+- [x] Component library foundation:
   - `BigButton.vue` - Large action buttons
   - `ProgressBar.vue` - Week progress indicator
   - `WeightAdjuster.vue` - +/- weight controls
   - `RestTimer.vue` - Countdown timer component
-- [ ] Layout components:
+- [x] Layout components:
   - `AppLayout.vue` - Main app container
   - `ScreenContainer.vue` - Full-height screen wrapper
 
-### Phase 3: Dashboard View
-- [ ] Week/Day display component
-- [ ] Progress bar visualization
-- [ ] Next workout preview
-- [ ] "START WORKOUT" button
-- [ ] Navigation to history/settings
-- [ ] Initial state setup (first-time user flow)
+### Phase 3: Dashboard View ✅ (Complete)
+- [x] Week/Day display component
+- [x] Progress bar visualization
+- [x] Next workout preview
+- [x] "START WORKOUT" button
+- [x] Navigation to history/settings
+- [x] Initial state setup (first-time user flow)
 
 ### Phase 4: Active Workout View
 - [ ] Exercise card component (one per screen)
