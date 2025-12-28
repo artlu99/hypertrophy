@@ -13,8 +13,7 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "generate-icons": "node scripts/generate-pwa-icons.mjs",
-    "deploy": "bun run build && wrangler deploy",
-    "deploy:preview": "bun run build && wrangler deploy --env preview"
+    "deploy": "bun run build && wrangler deploy"
   },
   "dependencies": {
     "pinia": "^3.0.4",

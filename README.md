@@ -1,6 +1,6 @@
 # hypertrophy
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue 3 PWA in Vite
 
 ## Type Support for `.vue` Imports in TS
 
