@@ -37,7 +37,7 @@
 ### Three Main Views (Routes)
 
 1. **Dashboard (`/`)**
-   - Current week/day indicator (e.g., "Week 4 / 12", "Day 2 - Workout B")
+   - Current week/day indicator (e.g., "Week 4 / 12", "Workout A")
    - Visual progress bar for 12-week cycle
    - Next workout preview (exercise list)
    - Big "START WORKOUT" button
@@ -49,7 +49,7 @@
    - Weight adjustment buttons (`+` / `-`) with visual feedback
    - Set counter (e.g., "Set 1 / 3") with progress bar
    - "COMPLETE SET" button with haptic feedback
-   - Rest timer (90s for accessory, 3min for main lifts, auto-start)
+   - Rest timer (90s for accessory, 3min for main lifts, manual start)
    - Navigation: Next/Previous exercise buttons (keyboard support with Arrow keys)
    - Wake Lock API (keeps screen on during workout)
    - Workout completion flow with success screen
@@ -71,19 +71,23 @@
 ### State Structure (Pinia Store)
 
 ```typescript
-interface UserState {
-  user: {
-    name: string
-    unit: 'kg' | 'lbs'
-  }
-  program: {
-    currentWeek: number // 1-12
-    currentDay: number // 1-2 (alternating A/B)
-    lastWorkoutDate: string | null
-    totalWorkoutsCompleted: number
-  }
+interface WorkoutState {
+  user: User
+  program: Program
   exercises: Exercise[]
   workoutHistory: WorkoutSession[]
+}
+
+interface User {
+  name: string
+  unit: 'kg' | 'lbs'
+}
+
+interface Program {
+  currentWeek: number // 1-12
+  currentDay: 'A' | 'B' // Workout day (currently all exercises are in Workout A)
+  lastWorkoutDate: string | null // ISO date string
+  totalWorkoutsCompleted: number
 }
 
 interface Exercise {
@@ -92,11 +96,16 @@ interface Exercise {
   baseWeight: number
   currentWeight: number
   workoutDay: 'A' | 'B' // Which day this exercise belongs to
+  trackingType?: 'weight' | 'reps' | 'time' // How this exercise is tracked (default: 'weight')
+  baseTime?: number // Base time in seconds for time-based exercises (e.g., Plank)
+  currentTime?: number // Current target time in seconds for time-based exercises
+  baseReps?: number // Base/target reps for reps-based exercises (e.g., Push-Ups)
+  currentReps?: number // Typical/average reps achieved for progression tracking
 }
 
 interface WorkoutSession {
-  date: string
-  week: number
+  date: string // ISO date string
+  week: number // 1-12
   day: 'A' | 'B'
   exercises: CompletedExercise[]
 }
@@ -107,8 +116,9 @@ interface CompletedExercise {
 }
 
 interface CompletedSet {
-  weight: number
-  reps: number
+  weight: number // For weight-based exercises
+  reps: number // For reps-based exercises (or weight-based)
+  time?: number // For time-based exercises (in seconds)
   completed: boolean
 }
 ```
@@ -116,42 +126,29 @@ interface CompletedSet {
 ### Storage Strategy
 - **Primary**: Pinia store (reactive state)
 - **Persistence**: localStorage (auto-save on state changes)
-- **Backup**: Export/import JSON functionality (future)
+- **Backup**: Export/import JSON functionality (implemented)
 
 ---
 
 ## Progression Algorithm
 
+> **Note**: For detailed exercise descriptions, sets, reps, and progression guidance, see [`WORKOUT.md`](./WORKOUT.md).
+
 ### 12-Week Program Structure
 
 | Week Block | Target Reps | Sets | Weight Calculation |
 |-----------|-------------|------|-------------------|
-| **Weeks 1-4** | 3 reps | 3 sets | `Base Weight + ((Week - 1) × Increment)` |
-| **Weeks 5-8** | 5 reps | 3 sets | Maintain Week 4 weight, optional deload, then resume |
-| **Weeks 9-12** | 5 reps | 3 sets | `Week 8 Weight + ((Week - 8) × Larger Increment)` |
-
-### Exercise Configuration
-
-**Workout A:**
-1. Squat
-2. Overhead Press
-3. Deadlift
-
-**Workout B:**
-1. Squat
-2. Bench Press
-3. Barbell Row
-
-*Note: Squat appears in both days (3x/week frequency)*
+| **Weeks 1-2** | 10 reps | 3 sets | `Base Weight` (focus on form, no weight increase) |
+| **Weeks 3-12** | 11 reps (10-12 range) | 3 sets | `Base Weight + ((Week - 2) × 2.5kg)` |
 
 ### Calculation Functions
 
 ```typescript
 // Core progression logic
-function getTargetWeight(exercise: Exercise, week: number): number
-function getTargetReps(week: number): number
+function getTargetWeight(exercise: Exercise, week: number, unit: 'kg' | 'lbs'): number
+function getTargetReps(week: number): number // Returns 10 for weeks 1-2, 11 for weeks 3-12
 function getTargetSets(): number // Always 3
-function shouldAdvanceWeek(workoutCompleted: boolean): boolean
+function shouldAdvanceWeek(currentDay: 'A' | 'B', workoutCompleted: boolean): boolean
 ```
 
 ---
@@ -236,9 +233,9 @@ function shouldAdvanceWeek(workoutCompleted: boolean): boolean
    navigator.wakeLock?.request('screen')
    ```
 
-2. **Rest Timer**: Auto-start after set completion
+2. **Rest Timer**: Manual start after set completion
    - 90 seconds for accessory work
-   - 3 minutes for main lifts
+   - 3 minutes (180s) for main lifts
    - Vibration on completion
 
 3. **Haptic Feedback**: Confirm button presses

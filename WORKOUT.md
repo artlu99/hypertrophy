@@ -21,7 +21,7 @@ Since you are disciplined, you must follow **Progressive Overload**. If you lift
 - _Sets:_ 3 sets to failure (do as many as you can until you can't do another).
 - _Progression:_ If you can do more than 15 easily, put your feet on a chair or do Decline Push-ups. If you can't do 5, do them on your knees.
 
-**C. Dumbbell Overhead Press (Standing)**
+**C. Dumbbell Overhead Press**
 
 - _Target:_ Shoulders. This creates the "V-taper" look that makes your waist look smaller.
 - _Sets:_ 3 sets of 10–12 reps.
