@@ -21,12 +21,12 @@ const emit = defineEmits<{
 }>();
 
 const buttonClass = computed(() => [
-  'big-button',
-  `big-button--${props.variant}`,
-  `big-button--${props.size}`,
+  'ghost-button',
+  `ghost-button--${props.variant}`,
+  `ghost-button--${props.size}`,
   {
-    'big-button--disabled': props.disabled,
-    'big-button--full-width': props.fullWidth,
+    'ghost-button--disabled': props.disabled,
+    'ghost-button--full-width': props.fullWidth,
   },
 ]);
 
@@ -50,12 +50,12 @@ function handleClick() {
     @click="handleClick"
     type="button"
   >
-    <span class="big-button__label">{{ label }}</span>
+    <span class="ghost-button__label">{{ label }}</span>
   </button>
 </template>
 
 <style scoped>
-.big-button {
+.ghost-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -77,23 +77,41 @@ function handleClick() {
   touch-action: manipulation;
 }
 
-.big-button:active:not(.big-button--disabled) {
+.ghost-button:active:not(.ghost-button--disabled) {
   transform: scale(0.98);
   box-shadow: var(--shadow-sm);
 }
 
-.big-button--primary {
+.ghost-button--primary {
+  background-color: var(--color-accent);
+  color: var(--color-bg-primary);
+}
+
+.ghost-button--primary:not(.ghost-button--disabled):active {
+  background-color: var(--color-accent-active);
+}
+
+@media (hover: hover) {
+  .ghost-button--primary:not(.ghost-button--disabled):hover {
+    background-color: var(--color-accent-hover);
+  }
+}
+
+.ghost-button--secondary {
   position: relative;
-  background-image: url('/ambitious-studio-rick-barrett-IXPKJcrOZCI-unsplash.jpg');
+  background-color: transparent;
+  background-image: url('/pawel-bulwan-JWK2H-2qz1Y-unsplash.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   color: var(--color-text-primary);
-  border: 1px solid var(--color-accent);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   overflow: hidden;
+  /* Significantly reduce saturation */
+  filter: saturate(0.2);
 }
 
-.big-button--primary::before {
+.ghost-button--secondary::before {
   content: '';
   position: absolute;
   top: 0;
@@ -105,87 +123,93 @@ function handleClick() {
   transition: background-color var(--transition-base);
 }
 
-.big-button--primary .big-button__label {
+.ghost-button--secondary .ghost-button__label {
   position: relative;
   z-index: 1;
 }
 
-.big-button--primary:not(.big-button--disabled):active::before {
+.ghost-button--secondary:not(.ghost-button--disabled):active::before {
   background-color: rgba(0, 0, 0, 0.6);
-}
-
-.big-button--secondary {
-  background-color: transparent;
-  color: var(--color-text-primary);
-  border: 2px solid var(--color-border-accent);
-}
-
-.big-button--secondary:not(.big-button--disabled):active {
-  background-color: rgba(255, 255, 255, 0.15);
   border-color: var(--color-accent);
 }
 
-.big-button--success {
+@media (hover: hover) {
+  .ghost-button--secondary:not(.ghost-button--disabled):hover::before {
+    background-color: rgba(0, 0, 0, 0.45);
+  }
+}
+
+.ghost-button--success {
   background-color: var(--color-gold);
   color: var(--color-bg-primary);
   border: 2px solid var(--color-gold);
 }
 
-.big-button--success:not(.big-button--disabled):active {
+.ghost-button--success:not(.ghost-button--disabled):active {
   background-color: var(--color-gold-hover);
   border-color: var(--color-gold-hover);
   box-shadow: 0 0 12px var(--color-gold-light);
 }
 
-.big-button--danger {
+@media (hover: hover) {
+  .ghost-button--success:not(.ghost-button--disabled):hover {
+    background-color: var(--color-gold-hover);
+    border-color: var(--color-gold-hover);
+    box-shadow: 0 0 12px var(--color-gold-light);
+  }
+}
+
+.ghost-button--danger {
   background-color: var(--color-error);
   color: var(--color-text-primary);
 }
 
-.big-button--danger:not(.big-button--disabled):active {
+.ghost-button--danger:not(.ghost-button--disabled):active {
   opacity: 0.85;
 }
 
-.big-button--sm {
+@media (hover: hover) {
+  .ghost-button--danger:not(.ghost-button--disabled):hover {
+    opacity: 0.9;
+  }
+}
+
+.ghost-button--sm {
   min-height: 44px;
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--font-size-base);
 }
 
-.big-button--md {
+.ghost-button--md {
   min-height: 52px;
   padding: var(--spacing-md) var(--spacing-lg);
   font-size: var(--font-size-lg);
 }
 
-.big-button--lg {
+.ghost-button--lg {
   min-height: 64px;
   padding: var(--spacing-lg) var(--spacing-xl);
   font-size: var(--font-size-xl);
 }
 
-.big-button--full-width {
+.ghost-button--full-width {
   width: 100%;
 }
 
-.big-button--disabled {
+.ghost-button--disabled {
   background-color: var(--color-button-disabled);
   color: var(--color-text-muted);
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-.big-button--primary.big-button--disabled::before {
-  background-color: rgba(0, 0, 0, 0.7);
-}
-
-.big-button__label {
+.ghost-button__label {
   display: block;
   text-align: center;
 }
 
 @media (min-width: 768px) {
-  .big-button--lg {
+  .ghost-button--lg {
     min-height: 72px;
     font-size: var(--font-size-2xl);
   }

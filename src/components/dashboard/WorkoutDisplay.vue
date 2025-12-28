@@ -4,10 +4,6 @@ import { useWorkoutStore } from '../../stores/workout';
 
 const workoutStore = useWorkoutStore();
 
-const weekDisplay = computed(() => {
-  return `Week ${workoutStore.currentWeek} / 12`;
-});
-
 const dayDisplay = computed(() => {
   const dayName = workoutStore.currentDay === 'A' ? 'Workout A' : 'Workout B';
   return `Day ${workoutStore.currentDay} - ${dayName}`;
@@ -16,7 +12,6 @@ const dayDisplay = computed(() => {
 
 <template>
   <div class="week-day-display">
-    <div class="week-day-display__week">{{ weekDisplay }}</div>
     <div class="week-day-display__day">{{ dayDisplay }}</div>
   </div>
 </template>
@@ -25,10 +20,10 @@ const dayDisplay = computed(() => {
 .week-day-display {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-lg);
-  text-align: center;
+  align-items: flex-start;
+  gap: 0;
+  padding: 0;
+  text-align: left;
 }
 
 .week-day-display__week {
@@ -41,11 +36,12 @@ const dayDisplay = computed(() => {
 }
 
 .week-day-display__day {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  line-height: var(--line-height-tight);
 }
 
 @media (min-width: 768px) {
@@ -54,7 +50,7 @@ const dayDisplay = computed(() => {
   }
   
   .week-day-display__day {
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-base);
   }
 }
 </style>

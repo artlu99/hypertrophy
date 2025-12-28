@@ -26,11 +26,6 @@ const progressClass = computed(() => [
 
 <template>
   <div :class="progressClass">
-    <div v-if="showLabel" class="progress-bar__label">
-      <span class="progress-bar__current">{{ current }}</span>
-      <span class="progress-bar__separator">/</span>
-      <span class="progress-bar__total">{{ total }}</span>
-    </div>
     <div class="progress-bar__track">
       <div
         class="progress-bar__fill"
@@ -41,6 +36,13 @@ const progressClass = computed(() => [
         role="progressbar"
       />
     </div>
+    <div v-if="showLabel" class="progress-bar__label">
+      Week
+      <span class="progress-bar__current">{{ current }}</span>
+      <span class="progress-bar__separator">/</span>
+      <span class="progress-bar__total">{{ total }}</span>
+    </div>
+    
   </div>
 </template>
 

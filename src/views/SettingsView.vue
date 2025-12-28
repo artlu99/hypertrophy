@@ -2,8 +2,8 @@
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import BigButton from "../components/common/BigButton.vue";
-import WeightAdjuster from "../components/common/WeightAdjuster.vue";
 import RepsAdjuster from "../components/common/RepsAdjuster.vue";
+import WeightAdjuster from "../components/common/WeightAdjuster.vue";
 import AppLayout from "../components/layout/AppLayout.vue";
 import ScreenContainer from "../components/layout/ScreenContainer.vue";
 import { useWorkoutStore } from "../stores/workout";
@@ -13,100 +13,106 @@ const workoutStore = useWorkoutStore();
 
 const unit = ref(workoutStore.unit);
 const exerciseSettings = ref(
-	workoutStore.exercises.map((ex) => ({
-		id: ex.id,
-		name: ex.name,
-		trackingType: ex.trackingType || 'weight',
-		baseWeight: ex.baseWeight,
-		baseReps: ex.baseReps,
-		baseTime: ex.baseTime,
-	})),
+  workoutStore.exercises.map((ex) => ({
+    id: ex.id,
+    name: ex.name,
+    trackingType: ex.trackingType || "weight",
+    baseWeight: ex.baseWeight,
+    baseReps: ex.baseReps,
+    baseTime: ex.baseTime,
+  })),
 );
 
 const hasChanges = computed(() => {
-	if (unit.value !== workoutStore.unit) return true;
-	return exerciseSettings.value.some((ex) => {
-		const original = workoutStore.exercises.find((e) => e.id === ex.id);
-		if (!original) return false;
-		return (
-			ex.baseWeight !== original.baseWeight ||
-			ex.baseReps !== original.baseReps ||
-			ex.baseTime !== original.baseTime
-		);
-	});
+  if (unit.value !== workoutStore.unit) return true;
+  return exerciseSettings.value.some((ex) => {
+    const original = workoutStore.exercises.find((e) => e.id === ex.id);
+    if (!original) return false;
+    return (
+      ex.baseWeight !== original.baseWeight ||
+      ex.baseReps !== original.baseReps ||
+      ex.baseTime !== original.baseTime
+    );
+  });
 });
 
 function handleUnitChange(newUnit: "kg" | "lbs") {
-	unit.value = newUnit;
+  unit.value = newUnit;
 }
 
 function handleWeightChange(exerciseId: number, weight: number) {
-	const exercise = exerciseSettings.value.find((ex) => ex.id === exerciseId);
-	if (exercise) {
-		exercise.baseWeight = weight;
-	}
+  const exercise = exerciseSettings.value.find((ex) => ex.id === exerciseId);
+  if (exercise) {
+    exercise.baseWeight = weight;
+  }
 }
 
 function handleRepsChange(exerciseId: number, reps: number) {
-	const exercise = exerciseSettings.value.find((ex) => ex.id === exerciseId);
-	if (exercise) {
-		exercise.baseReps = reps;
-	}
+  const exercise = exerciseSettings.value.find((ex) => ex.id === exerciseId);
+  if (exercise) {
+    exercise.baseReps = reps;
+  }
 }
 
 function handleTimeChange(exerciseId: number, time: number) {
-	const exercise = exerciseSettings.value.find((ex) => ex.id === exerciseId);
-	if (exercise) {
-		exercise.baseTime = time;
-	}
+  const exercise = exerciseSettings.value.find((ex) => ex.id === exerciseId);
+  if (exercise) {
+    exercise.baseTime = time;
+  }
 }
 
 function handleSave() {
-	// Update unit
-	if (unit.value !== workoutStore.unit) {
-		workoutStore.updateUser(workoutStore.user.name, unit.value);
-	}
+  // Update unit
+  if (unit.value !== workoutStore.unit) {
+    workoutStore.updateUser(workoutStore.user.name, unit.value);
+  }
 
-	// Update exercise settings based on tracking type
-	exerciseSettings.value.forEach((ex) => {
-		const original = workoutStore.exercises.find((e) => e.id === ex.id);
-		if (!original) return;
+  // Update exercise settings based on tracking type
+  exerciseSettings.value.forEach((ex) => {
+    const original = workoutStore.exercises.find((e) => e.id === ex.id);
+    if (!original) return;
 
-		if (ex.trackingType === 'weight' && ex.baseWeight !== original.baseWeight) {
-			workoutStore.updateExerciseBaseWeight(ex.id, ex.baseWeight);
-		} else if (ex.trackingType === 'reps' && ex.baseReps !== original.baseReps) {
-			workoutStore.updateExerciseBaseReps(ex.id, ex.baseReps || 10);
-		} else if (ex.trackingType === 'time' && ex.baseTime !== original.baseTime) {
-			workoutStore.updateExerciseBaseTime(ex.id, ex.baseTime || 30);
-		}
-	});
+    if (ex.trackingType === "weight" && ex.baseWeight !== original.baseWeight) {
+      workoutStore.updateExerciseBaseWeight(ex.id, ex.baseWeight);
+    } else if (
+      ex.trackingType === "reps" &&
+      ex.baseReps !== original.baseReps
+    ) {
+      workoutStore.updateExerciseBaseReps(ex.id, ex.baseReps || 10);
+    } else if (
+      ex.trackingType === "time" &&
+      ex.baseTime !== original.baseTime
+    ) {
+      workoutStore.updateExerciseBaseTime(ex.id, ex.baseTime || 30);
+    }
+  });
 
-	router.push("/");
+  router.push("/");
 }
 
 function handleReset() {
-	if (
-		confirm(
-			"Are you sure you want to reset the program? This will reset all progress, workout history, and starting weights. This action cannot be undone.",
-		)
-	) {
-		workoutStore.resetProgram();
-		// Reset local state
-		unit.value = workoutStore.unit;
-		exerciseSettings.value = workoutStore.exercises.map((ex) => ({
-			id: ex.id,
-			name: ex.name,
-			trackingType: ex.trackingType || 'weight',
-			baseWeight: ex.baseWeight,
-			baseReps: ex.baseReps,
-			baseTime: ex.baseTime,
-		}));
-		router.push("/");
-	}
+  if (
+    confirm(
+      "Are you sure you want to reset the program? This will reset all progress, workout history, and starting weights. This action cannot be undone.",
+    )
+  ) {
+    workoutStore.resetProgram();
+    // Reset local state
+    unit.value = workoutStore.unit;
+    exerciseSettings.value = workoutStore.exercises.map((ex) => ({
+      id: ex.id,
+      name: ex.name,
+      trackingType: ex.trackingType || "weight",
+      baseWeight: ex.baseWeight,
+      baseReps: ex.baseReps,
+      baseTime: ex.baseTime,
+    }));
+    router.push("/");
+  }
 }
 
 function handleCancel() {
-	router.push("/");
+  router.push("/");
 }
 
 // Export/Import functionality
@@ -116,100 +122,100 @@ const importSuccess = ref(false);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 
 function handleExport() {
-	try {
-		const jsonData = workoutStore.exportData();
-		const blob = new Blob([jsonData], { type: "application/json" });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement("a");
-		link.href = url;
-		link.download = `hypertrophy-backup-${new Date().toISOString().split("T")[0]}.json`;
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		URL.revokeObjectURL(url);
-	} catch (error) {
-		console.error("Export failed:", error);
-		importError.value = "Failed to export data. Please try again.";
-	}
+  try {
+    const jsonData = workoutStore.exportData();
+    const blob = new Blob([jsonData], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `hypertrophy-backup-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Export failed:", error);
+    importError.value = "Failed to export data. Please try again.";
+  }
 }
 
 function handleFileSelect(event: Event) {
-	const target = event.target as HTMLInputElement;
-	const file = target.files?.[0];
-	if (!file) return;
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
 
-	const reader = new FileReader();
-	reader.onload = (e) => {
-		const text = e.target?.result as string;
-		importText.value = text;
-		handleImport(text);
-	};
-	reader.onerror = () => {
-		importError.value = "Failed to read file. Please try again.";
-	};
-	reader.readAsText(file);
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target?.result as string;
+    importText.value = text;
+    handleImport(text);
+  };
+  reader.onerror = () => {
+    importError.value = "Failed to read file. Please try again.";
+  };
+  reader.readAsText(file);
 }
 
 function handleImportFromText() {
-	if (!importText.value.trim()) {
-		importError.value = "Please paste JSON data or select a file.";
-		return;
-	}
-	handleImport(importText.value);
+  if (!importText.value.trim()) {
+    importError.value = "Please paste JSON data or select a file.";
+    return;
+  }
+  handleImport(importText.value);
 }
 
 function handleImport(json: string) {
-	importError.value = null;
-	importSuccess.value = false;
+  importError.value = null;
+  importSuccess.value = false;
 
-	if (!json.trim()) {
-		importError.value = "Please provide JSON data.";
-		return;
-	}
+  if (!json.trim()) {
+    importError.value = "Please provide JSON data.";
+    return;
+  }
 
-	const result = workoutStore.importData(json);
-	if (result.success) {
-		importSuccess.value = true;
-		importText.value = "";
-		// Reset file input
-		if (fileInputRef.value) {
-			fileInputRef.value.value = "";
-		}
-		// Reset local state to match imported data
-		unit.value = workoutStore.unit;
-		exerciseSettings.value = workoutStore.exercises.map((ex) => ({
-			id: ex.id,
-			name: ex.name,
-			trackingType: ex.trackingType || 'weight',
-			baseWeight: ex.baseWeight,
-			baseReps: ex.baseReps,
-			baseTime: ex.baseTime,
-		}));
-		// Clear success message after 3 seconds
-		setTimeout(() => {
-			importSuccess.value = false;
-		}, 3000);
-	} else {
-		importError.value = result.error || "Failed to import data.";
-	}
+  const result = workoutStore.importData(json);
+  if (result.success) {
+    importSuccess.value = true;
+    importText.value = "";
+    // Reset file input
+    if (fileInputRef.value) {
+      fileInputRef.value.value = "";
+    }
+    // Reset local state to match imported data
+    unit.value = workoutStore.unit;
+    exerciseSettings.value = workoutStore.exercises.map((ex) => ({
+      id: ex.id,
+      name: ex.name,
+      trackingType: ex.trackingType || "weight",
+      baseWeight: ex.baseWeight,
+      baseReps: ex.baseReps,
+      baseTime: ex.baseTime,
+    }));
+    // Clear success message after 3 seconds
+    setTimeout(() => {
+      importSuccess.value = false;
+    }, 3000);
+  } else {
+    importError.value = result.error || "Failed to import data.";
+  }
 }
 
 // Reset local state if user navigates away without saving
 watch(
-	() => router.currentRoute.value.path,
-	() => {
-		if (router.currentRoute.value.path !== "/settings") {
-			unit.value = workoutStore.unit;
-			exerciseSettings.value = workoutStore.exercises.map((ex) => ({
-				id: ex.id,
-				name: ex.name,
-				trackingType: ex.trackingType || 'weight',
-				baseWeight: ex.baseWeight,
-				baseReps: ex.baseReps,
-				baseTime: ex.baseTime,
-			}));
-		}
-	},
+  () => router.currentRoute.value.path,
+  () => {
+    if (router.currentRoute.value.path !== "/settings") {
+      unit.value = workoutStore.unit;
+      exerciseSettings.value = workoutStore.exercises.map((ex) => ({
+        id: ex.id,
+        name: ex.name,
+        trackingType: ex.trackingType || "weight",
+        baseWeight: ex.baseWeight,
+        baseReps: ex.baseReps,
+        baseTime: ex.baseTime,
+      }));
+    }
+  },
 );
 </script>
 
@@ -220,22 +226,16 @@ watch(
         <div class="settings-view__section">
           <h2 class="settings-view__section-title">Unit Preference</h2>
           <div class="settings-view__unit-toggle">
-            <button
-              :class="[
-                'settings-view__unit-button',
-                { 'settings-view__unit-button--active': unit === 'kg' },
-              ]"
-              @click="handleUnitChange('kg')"
-            >
+            <button :class="[
+              'settings-view__unit-button',
+              { 'settings-view__unit-button--active': unit === 'kg' },
+            ]" @click="handleUnitChange('kg')">
               kg
             </button>
-            <button
-              :class="[
-                'settings-view__unit-button',
-                { 'settings-view__unit-button--active': unit === 'lbs' },
-              ]"
-              @click="handleUnitChange('lbs')"
-            >
+            <button :class="[
+              'settings-view__unit-button',
+              { 'settings-view__unit-button--active': unit === 'lbs' },
+            ]" @click="handleUnitChange('lbs')">
               lbs
             </button>
           </div>
@@ -248,62 +248,44 @@ watch(
             progression calculations.
           </p>
           <div class="settings-view__exercises">
-            <div
-              v-for="exercise in exerciseSettings"
-              :key="exercise.id"
-              class="settings-view__exercise"
-            >
+            <div v-for="exercise in exerciseSettings" :key="exercise.id" class="settings-view__exercise">
               <div class="settings-view__exercise-header">
                 <h3 class="settings-view__exercise-name">{{ exercise.name }}</h3>
                 <span class="settings-view__exercise-day">
-                  {{ workoutStore.exercises.find((e) => e.id === exercise.id)?.workoutDay }}
+                  {{workoutStore.exercises.find((e) => e.id === exercise.id)?.workoutDay}}
                 </span>
               </div>
-              
+
               <!-- Weight-based exercises -->
               <div v-if="exercise.trackingType === 'weight'" class="settings-view__exercise-control">
                 <label class="settings-view__control-label">Starting Weight</label>
-                <WeightAdjuster
-                  :value="exercise.baseWeight"
-                  :unit="unit"
-                  :min="0"
-                  :max="1000"
-                  :step="unit === 'kg' ? 2.5 : 5"
-                  @update:value="(weight) => handleWeightChange(exercise.id, weight)"
-                />
+                <WeightAdjuster :value="exercise.baseWeight" :unit="unit" :min="0" :max="1000"
+                  :step="unit === 'kg' ? 2.5 : 5" @update:value="(weight) => handleWeightChange(exercise.id, weight)" />
               </div>
-              
+
               <!-- Reps-based exercises -->
               <div v-else-if="exercise.trackingType === 'reps'" class="settings-view__exercise-control">
                 <label class="settings-view__control-label">Starting Reps</label>
-                <RepsAdjuster
-                  :value="exercise.baseReps || 10"
-                  :min="1"
-                  :max="200"
-                  :step="1"
-                  @update:value="(reps) => handleRepsChange(exercise.id, reps)"
-                />
+                <RepsAdjuster :value="exercise.baseReps || 10" :min="1" :max="200" :step="1"
+                  @update:value="(reps) => handleRepsChange(exercise.id, reps)" />
               </div>
-              
+
               <!-- Time-based exercises -->
               <div v-else-if="exercise.trackingType === 'time'" class="settings-view__exercise-control">
                 <label class="settings-view__control-label">Starting Time (seconds)</label>
                 <div class="settings-view__time-control">
-                  <button
-                    class="settings-view__time-button"
+                  <button class="settings-view__time-button"
                     @click="handleTimeChange(exercise.id, (exercise.baseTime || 30) - 5)"
-                    :disabled="(exercise.baseTime || 30) <= 5"
-                  >
+                    :disabled="(exercise.baseTime || 30) <= 5">
                     −5s
                   </button>
                   <span class="settings-view__time-display">
-                    {{ Math.floor((exercise.baseTime || 30) / 60) }}:{{ ((exercise.baseTime || 30) % 60).toString().padStart(2, '0') }}
+                    {{ Math.floor((exercise.baseTime || 30) / 60) }}:{{ ((exercise.baseTime || 30) %
+                      60).toString().padStart(2, '0') }}
                   </span>
-                  <button
-                    class="settings-view__time-button"
+                  <button class="settings-view__time-button"
                     @click="handleTimeChange(exercise.id, (exercise.baseTime || 30) + 5)"
-                    :disabled="(exercise.baseTime || 30) >= 600"
-                  >
+                    :disabled="(exercise.baseTime || 30) >= 600">
                     +5s
                   </button>
                 </div>
@@ -317,15 +299,9 @@ watch(
           <p class="settings-view__section-description">
             Export your workout data as JSON to save on your phone, or import previously exported data.
           </p>
-          
+
           <div class="settings-view__backup-actions">
-            <BigButton
-              label="Export Data"
-              variant="primary"
-              size="md"
-              full-width
-              @click="handleExport"
-            />
+            <BigButton label="Export Data" variant="primary" size="md" full-width @click="handleExport" />
             <p class="settings-view__backup-hint">
               Downloads a JSON file with all your workout history, progress, and settings.
             </p>
@@ -334,52 +310,29 @@ watch(
           <div class="settings-view__import-section">
             <h3 class="settings-view__import-title">Import Data</h3>
             <div class="settings-view__import-file">
-              <input
-                ref="fileInputRef"
-                type="file"
-                accept=".json,application/json"
-                class="settings-view__file-input"
-                @change="handleFileSelect"
-              />
-              <BigButton
-                label="Choose File"
-                variant="secondary"
-                size="sm"
-                @click="() => fileInputRef?.click()"
-              />
+              <input ref="fileInputRef" type="file" accept=".json,application/json" class="settings-view__file-input"
+                @change="handleFileSelect" />
+              <BigButton label="Choose File" variant="secondary" size="sm" @click="() => fileInputRef?.click()" />
             </div>
             <div class="settings-view__import-divider">
               <span>or</span>
             </div>
             <div class="settings-view__import-text">
-              <textarea
-                v-model="importText"
-                class="settings-view__textarea"
-                placeholder="Paste JSON data here..."
-                rows="6"
-              />
-              <BigButton
-                label="Import from Text"
-                variant="secondary"
-                size="md"
-                full-width
-                @click="handleImportFromText"
-              />
+              <textarea v-model="importText" class="settings-view__textarea" placeholder="Paste JSON data here..."
+                rows="6" />
+              <BigButton label="Import from Text" variant="secondary" size="md" full-width
+                @click="handleImportFromText" />
             </div>
-            
+
             <div v-if="importError" class="settings-view__error-message">
               <span class="settings-view__error-icon">⚠️</span>
               <span>{{ importError }}</span>
-              <button
-                class="settings-view__error-close"
-                @click="importError = null"
-                aria-label="Dismiss error"
-                type="button"
-              >
+              <button class="settings-view__error-close" @click="importError = null" aria-label="Dismiss error"
+                type="button">
                 ×
               </button>
             </div>
-            
+
             <div v-if="importSuccess" class="settings-view__success-message">
               ✓ Data imported successfully!
             </div>
@@ -402,34 +355,16 @@ watch(
               </span>
             </div>
           </div>
-          <BigButton
-            label="Reset Program"
-            variant="danger"
-            size="md"
-            full-width
-            @click="handleReset"
-          />
+          <BigButton label="Reset Program" variant="danger" size="md" full-width @click="handleReset" />
           <p class="settings-view__warning">
             ⚠️ Resetting will clear all workout history and reset progress to week 1, day A.
           </p>
         </div>
 
         <div class="settings-view__actions">
-          <BigButton
-            label="Save Changes"
-            variant="primary"
-            size="lg"
-            full-width
-            :disabled="!hasChanges"
-            @click="handleSave"
-          />
-          <BigButton
-            label="Cancel"
-            variant="secondary"
-            size="md"
-            full-width
-            @click="handleCancel"
-          />
+          <BigButton label="Save Changes" variant="primary" size="lg" full-width :disabled="!hasChanges"
+            @click="handleSave" />
+          <BigButton label="Cancel" variant="secondary" size="md" full-width @click="handleCancel" />
         </div>
       </div>
     </ScreenContainer>
@@ -794,10 +729,9 @@ watch(
   .settings-view__section {
     padding: var(--spacing-xl);
   }
-  
+
   .settings-view__section-title {
     font-size: var(--font-size-2xl);
   }
 }
 </style>
-
