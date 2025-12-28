@@ -210,15 +210,14 @@ function shouldAdvanceWeek(workoutCompleted: boolean): boolean
 - [x] Web manifest
 - [x] Wake Lock API integration (prevent screen sleep)
 - [x] Haptic feedback (`navigator.vibrate()`)
-- [ ] Offline detection and messaging
-- [ ] Install prompt handling
+- [x] Offline detection and messaging
+- [x] Install prompt handling
 
 ### Phase 7: Polish & Optimization
 - [ ] Animation/transitions (exercise card swipe)
 - [ ] Error handling and edge cases
 - [ ] Performance optimization
 - [ ] Accessibility improvements
-- [ ] Testing (unit tests for progression logic)
 
 ---
 
