@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
 interface Props {
-  duration: number; // Duration in seconds
-  autoStart?: boolean;
-  onComplete?: () => void;
+	duration: number; // Duration in seconds
+	autoStart?: boolean;
+	onComplete?: () => void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  autoStart: false,
-  onComplete: undefined,
+	autoStart: false,
+	onComplete: undefined,
 });
 
 const emit = defineEmits<{
-  complete: [];
+	complete: [];
 }>();
 
 const timeRemaining = ref(props.duration);
@@ -24,84 +24,84 @@ const minutes = computed(() => Math.floor(timeRemaining.value / 60));
 const seconds = computed(() => timeRemaining.value % 60);
 
 const progress = computed(() => {
-  return (timeRemaining.value / props.duration) * 100;
+	return (timeRemaining.value / props.duration) * 100;
 });
 
 const timeDisplay = computed(() => {
-  return `${minutes.value.toString().padStart(2, '0')}:${seconds.value
-    .toString()
-    .padStart(2, '0')}`;
+	return `${minutes.value.toString().padStart(2, "0")}:${seconds.value
+		.toString()
+		.padStart(2, "0")}`;
 });
 
 function start() {
-  if (isRunning.value) return;
-  isRunning.value = true;
-  timeRemaining.value = props.duration;
-  tick();
+	if (isRunning.value) return;
+	isRunning.value = true;
+	timeRemaining.value = props.duration;
+	tick();
 }
 
 function stop() {
-  isRunning.value = false;
-  if (intervalId.value !== null) {
-    clearInterval(intervalId.value);
-    intervalId.value = null;
-  }
+	isRunning.value = false;
+	if (intervalId.value !== null) {
+		clearInterval(intervalId.value);
+		intervalId.value = null;
+	}
 }
 
 function reset() {
-  stop();
-  timeRemaining.value = props.duration;
+	stop();
+	timeRemaining.value = props.duration;
 }
 
 function tick() {
-  if (intervalId.value !== null) {
-    clearInterval(intervalId.value);
-  }
+	if (intervalId.value !== null) {
+		clearInterval(intervalId.value);
+	}
 
-  intervalId.value = window.setInterval(() => {
-    if (timeRemaining.value > 0) {
-      timeRemaining.value -= 1;
-    } else {
-      complete();
-    }
-  }, 1000);
+	intervalId.value = window.setInterval(() => {
+		if (timeRemaining.value > 0) {
+			timeRemaining.value -= 1;
+		} else {
+			complete();
+		}
+	}, 1000);
 }
 
 function complete() {
-  stop();
-  emit('complete');
-  if (props.onComplete) {
-    props.onComplete();
-  }
-  // Vibration feedback
-  if (navigator.vibrate) {
-    navigator.vibrate([200, 100, 200]);
-  }
+	stop();
+	emit("complete");
+	if (props.onComplete) {
+		props.onComplete();
+	}
+	// Vibration feedback
+	if (navigator.vibrate) {
+		navigator.vibrate([200, 100, 200]);
+	}
 }
 
 watch(
-  () => props.duration,
-  (newDuration) => {
-    if (!isRunning.value) {
-      timeRemaining.value = newDuration;
-    }
-  }
+	() => props.duration,
+	(newDuration) => {
+		if (!isRunning.value) {
+			timeRemaining.value = newDuration;
+		}
+	},
 );
 
 onMounted(() => {
-  if (props.autoStart) {
-    start();
-  }
+	if (props.autoStart) {
+		start();
+	}
 });
 
 onUnmounted(() => {
-  stop();
+	stop();
 });
 
 defineExpose({
-  start,
-  stop,
-  reset,
+	start,
+	stop,
+	reset,
 });
 </script>
 
@@ -146,9 +146,10 @@ defineExpose({
   font-size: var(--font-size-5xl);
   font-weight: var(--font-weight-extrabold);
   line-height: var(--line-height-tight);
-  color: var(--color-accent);
-  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+  color: var(--color-gold);
+  text-shadow: 0 2px 8px var(--color-gold-light);
   font-variant-numeric: tabular-nums;
+  letter-spacing: var(--letter-spacing-tight);
 }
 
 .rest-timer__label {
@@ -171,11 +172,12 @@ defineExpose({
   height: 100%;
   background: linear-gradient(
     90deg,
-    var(--color-accent) 0%,
-    var(--color-accent-hover) 100%
+    var(--color-gold) 0%,
+    var(--color-gold-hover) 100%
   );
   border-radius: var(--radius-full);
   transition: width 1s linear;
+  box-shadow: 0 0 4px var(--color-gold-light);
 }
 
 .rest-timer__actions {

@@ -35,46 +35,46 @@ function handleViewSettings() {
   <AppLayout>
     <ScreenContainer>
       <div class="dashboard">
-        <!-- Week/Day Display -->
-        <div class="dashboard__header">
-          <WeekDayDisplay />
+        <!-- Top Section: Week/Day Display and Progress Bar -->
+        <div class="dashboard__top">
+          <div class="dashboard__header">
+            <WeekDayDisplay />
+          </div>
+          <div class="dashboard__progress">
+            <ProgressBar
+              :current="progress.current"
+              :total="progress.total"
+              size="lg"
+            />
+          </div>
         </div>
 
-        <!-- Progress Bar -->
-        <div class="dashboard__progress">
-          <ProgressBar
-            :current="progress.current"
-            :total="progress.total"
-            size="lg"
-          />
-        </div>
-
-        <!-- Next Workout Preview -->
+        <!-- Middle Section: Next Workout Preview -->
         <div class="dashboard__preview">
           <NextWorkoutPreview />
         </div>
 
-        <!-- Start Workout Button -->
-        <div class="dashboard__start">
-          <StartWorkoutButton @start="handleStartWorkout" />
-        </div>
-
-        <!-- Navigation -->
-        <div class="dashboard__nav">
-          <BigButton
-            label="History"
-            variant="secondary"
-            size="md"
-            full-width
-            @click="handleViewHistory"
-          />
-          <BigButton
-            label="Settings"
-            variant="secondary"
-            size="md"
-            full-width
-            @click="handleViewSettings"
-          />
+        <!-- Bottom Section: Action Buttons -->
+        <div class="dashboard__actions">
+          <div class="dashboard__start">
+            <StartWorkoutButton @start="handleStartWorkout" />
+          </div>
+          <div class="dashboard__nav">
+            <BigButton
+              label="History"
+              variant="secondary"
+              size="md"
+              full-width
+              @click="handleViewHistory"
+            />
+            <BigButton
+              label="Settings"
+              variant="secondary"
+              size="md"
+              full-width
+              @click="handleViewSettings"
+            />
+          </div>
         </div>
       </div>
     </ScreenContainer>
@@ -90,23 +90,48 @@ function handleViewSettings() {
   max-width: 500px;
   margin: 0 auto;
   padding: var(--spacing-lg) 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Top section with columnar layout */
+.dashboard__top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+  align-items: start;
 }
 
 .dashboard__header {
-  margin-bottom: var(--spacing-md);
+  grid-column: 1;
 }
 
 .dashboard__progress {
-  width: 100%;
+  grid-column: 2;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding-top: var(--spacing-sm);
 }
 
+/* Middle section */
 .dashboard__preview {
   width: 100%;
+  flex: 1;
+}
+
+/* Bottom section with full-width buttons */
+.dashboard__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  width: 100%;
+  margin-top: auto;
+  padding-top: var(--spacing-xl);
 }
 
 .dashboard__start {
   width: 100%;
-  margin-top: var(--spacing-md);
 }
 
 .dashboard__nav {
@@ -114,13 +139,75 @@ function handleViewSettings() {
   flex-direction: column;
   gap: var(--spacing-md);
   width: 100%;
-  margin-top: var(--spacing-lg);
+}
+
+/* Adjust progress bar size for top right quarter */
+.dashboard__progress :deep(.progress-bar) {
+  width: 100%;
+  max-width: 100%;
+}
+
+.dashboard__progress :deep(.progress-bar--lg .progress-bar__label) {
+  font-size: var(--font-size-lg);
+}
+
+.dashboard__progress :deep(.progress-bar--lg .progress-bar__current) {
+  font-size: var(--font-size-xl);
+}
+
+.dashboard__progress :deep(.progress-bar--lg .progress-bar__separator),
+.dashboard__progress :deep(.progress-bar--lg .progress-bar__total) {
+  font-size: var(--font-size-base);
+}
+
+.dashboard__progress :deep(.progress-bar--lg .progress-bar__track) {
+  height: 8px;
 }
 
 @media (min-width: 768px) {
   .dashboard {
     gap: var(--spacing-2xl);
     padding: var(--spacing-xl) 0;
+    max-width: 600px;
+  }
+
+  .dashboard__top {
+    gap: var(--spacing-xl);
+  }
+
+  .dashboard__progress :deep(.progress-bar--lg .progress-bar__label) {
+    font-size: var(--font-size-xl);
+  }
+
+  .dashboard__progress :deep(.progress-bar--lg .progress-bar__current) {
+    font-size: var(--font-size-2xl);
+  }
+
+  .dashboard__progress :deep(.progress-bar--lg .progress-bar__separator),
+  .dashboard__progress :deep(.progress-bar--lg .progress-bar__total) {
+    font-size: var(--font-size-lg);
+  }
+
+  .dashboard__progress :deep(.progress-bar--lg .progress-bar__track) {
+    height: 10px;
+  }
+}
+
+/* Mobile adjustments for smaller screens */
+@media (max-width: 480px) {
+  .dashboard__top {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .dashboard__header {
+    grid-column: 1;
+  }
+
+  .dashboard__progress {
+    grid-column: 1;
+    justify-content: center;
+    padding-top: 0;
   }
 }
 </style>

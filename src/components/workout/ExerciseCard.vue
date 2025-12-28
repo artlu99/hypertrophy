@@ -36,14 +36,35 @@ const emit = defineEmits<{
 }>();
 
 const isMainLift = computed(() => {
-  // Main lifts: Squat, Deadlift, Bench Press, Overhead Press
-  const mainLifts = ['Squat', 'Deadlift', 'Bench Press', 'Overhead Press'];
+  // Main lifts: compound movements that require longer rest
+  const mainLifts = [
+    'Squat',
+    'Deadlift',
+    'Bench Press',
+    'Overhead Press',
+    'Dumbbell Goblet Squat',
+    'Dumbbell Overhead Press',
+    'Dumbbell Romanian Deadlift',
+    'Dumbbell Bent-Over Row',
+  ];
   return mainLifts.includes(props.exercise.name);
 });
 
 const restDurationForExercise = computed(() => {
   // Main lifts: 3 minutes (180s), Accessory: 90 seconds
   return isMainLift.value ? 180 : 90;
+});
+
+const isBodyweightExercise = computed(() => {
+  // Bodyweight exercises have baseWeight of 0
+  return props.exercise.baseWeight === 0;
+});
+
+const displayWeight = computed(() => {
+  if (isBodyweightExercise.value) {
+    return 'Bodyweight';
+  }
+  return `${props.targetWeight.toFixed(props.unit === 'kg' ? 1 : 0)} ${props.unit}`;
 });
 
 const weightDifference = computed(() => {
@@ -83,7 +104,7 @@ watch(
       <div class="exercise-card__targets">
         <div class="exercise-card__target">
           <span class="exercise-card__target-label">Target Weight</span>
-          <span class="exercise-card__target-value">{{ targetWeight.toFixed(unit === 'kg' ? 1 : 0) }} {{ unit }}</span>
+          <span class="exercise-card__target-value">{{ displayWeight }}</span>
         </div>
         <div class="exercise-card__target">
           <span class="exercise-card__target-label">Target Reps</span>
@@ -94,7 +115,7 @@ watch(
 
     <SetCounter :current-set="currentSet" :total-sets="targetSets" />
 
-    <div class="exercise-card__weight-section">
+    <div v-if="!isBodyweightExercise" class="exercise-card__weight-section">
       <div class="exercise-card__current-weight">
         <span class="exercise-card__current-label">Current Weight</span>
         <WeightAdjuster
@@ -110,6 +131,11 @@ watch(
           <span v-else>{{ Math.abs(weightDifference).toFixed(unit === 'kg' ? 1 : 0) }} {{ unit }} below target</span>
         </div>
       </div>
+    </div>
+    <div v-else class="exercise-card__bodyweight-notice">
+      <p class="exercise-card__bodyweight-text">Bodyweight Exercise</p>
+      <p v-if="exercise.name === 'Push-Ups'" class="exercise-card__bodyweight-hint">Do as many reps as possible (to failure)</p>
+      <p v-else-if="exercise.name === 'Plank'" class="exercise-card__bodyweight-hint">Hold for as long as possible</p>
     </div>
 
     <div v-if="showRestTimer" class="exercise-card__rest">
@@ -168,7 +194,8 @@ watch(
   text-align: center;
   margin: 0;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--letter-spacing-tight);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .exercise-card__targets {
@@ -235,6 +262,32 @@ watch(
 .exercise-card__weight-diff--below {
   color: var(--color-warning);
   background-color: rgba(251, 191, 36, 0.1);
+}
+
+.exercise-card__bodyweight-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.exercise-card__bodyweight-text {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.exercise-card__bodyweight-hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  text-align: center;
+  font-style: italic;
 }
 
 .exercise-card__rest {

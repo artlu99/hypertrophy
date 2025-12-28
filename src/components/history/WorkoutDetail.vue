@@ -235,7 +235,7 @@ const totalVolume = computed(() => {
 .workout-detail__exercise-name {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
-  color: var(--color-accent);
+  color: var(--color-gold);
   margin: 0;
   text-transform: uppercase;
 }

@@ -35,8 +35,9 @@ const dayDisplay = computed(() => {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-extrabold);
   line-height: var(--line-height-tight);
-  color: var(--color-accent);
-  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+  color: var(--color-gold);
+  text-shadow: 0 2px 8px var(--color-gold-light);
+  letter-spacing: var(--letter-spacing-tight);
 }
 
 .week-day-display__day {

@@ -96,23 +96,27 @@ function handleClick() {
 }
 
 .big-button--secondary {
-  background-color: var(--color-bg-tertiary);
+  background-color: transparent;
   color: var(--color-text-primary);
-  border: 2px solid var(--color-border-light);
+  border: 2px solid var(--color-border-accent);
 }
 
 .big-button--secondary:not(.big-button--disabled):hover {
-  background-color: var(--color-bg-secondary);
+  background-color: rgba(255, 255, 255, 0.1);
   border-color: var(--color-accent);
+  border-width: 3px;
 }
 
 .big-button--success {
-  background-color: var(--color-success);
-  color: var(--color-text-primary);
+  background-color: var(--color-gold);
+  color: var(--color-bg-primary);
+  border: 2px solid var(--color-gold);
 }
 
 .big-button--success:not(.big-button--disabled):hover {
-  opacity: 0.9;
+  background-color: var(--color-gold-hover);
+  border-color: var(--color-gold-hover);
+  box-shadow: 0 0 12px var(--color-gold-light);
 }
 
 .big-button--danger {

@@ -143,7 +143,7 @@ export const useWorkoutStore = defineStore('workout', () => {
     state.value.program.lastWorkoutDate = session.date;
     state.value.program.totalWorkoutsCompleted += 1;
 
-    // Advance week if completing Workout B
+    // Advance week if completing Workout A (all exercises are in Workout A)
     if (shouldAdvanceWeek(currentDay.value, true)) {
       if (state.value.program.currentWeek < 12) {
         state.value.program.currentWeek += 1;
@@ -151,7 +151,7 @@ export const useWorkoutStore = defineStore('workout', () => {
       // Reset to day A for next week
       state.value.program.currentDay = 'A';
     } else {
-      // Switch to next day
+      // Switch to next day (though Workout B is currently empty)
       state.value.program.currentDay = getNextDay(currentDay.value);
     }
   }

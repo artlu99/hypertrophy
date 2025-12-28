@@ -59,8 +59,9 @@ const progressClass = computed(() => [
 }
 
 .progress-bar__current {
-  color: var(--color-accent);
+  color: var(--color-gold);
   font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-extrabold);
 }
 
 .progress-bar__separator {
@@ -86,12 +87,12 @@ const progressClass = computed(() => [
   height: 100%;
   background: linear-gradient(
     90deg,
-    var(--color-accent) 0%,
-    var(--color-accent-hover) 100%
+    var(--color-gold) 0%,
+    var(--color-gold-hover) 100%
   );
   border-radius: var(--radius-full);
   transition: width var(--transition-base);
-  box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 8px var(--color-gold-light);
 }
 
 .progress-bar--sm .progress-bar__track {

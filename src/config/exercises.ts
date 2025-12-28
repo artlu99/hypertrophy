@@ -1,23 +1,39 @@
 /**
  * Exercise configuration for the 12-week program
+ * Based on the 12 Week Plan from WORKOUT.md
  */
 
 import type { Exercise } from '../types/workout';
 
 /**
- * Default exercises for Workout A and Workout B
- * Squat appears in both days (3x/week frequency)
+ * Default exercises for the 12-week hypertrophy program
+ * All exercises are in Workout A (exercises A-F from the plan)
+ * 
+ * A. Dumbbell Goblet Squat - 3 sets of 10-12 reps
+ * B. Push-Ups - 3 sets to failure (bodyweight, weight = 0)
+ * C. Dumbbell Overhead Press - 3 sets of 10-12 reps
+ * D. Dumbbell Romanian Deadlift (RDL) - 3 sets of 10-12 reps
+ * E. Dumbbell Bent-Over Row - 3 sets of 10-12 reps
+ * F. Plank - 3 rounds, hold for as long as possible (bodyweight, weight = 0)
  */
 export const DEFAULT_EXERCISES: Omit<Exercise, 'currentWeight'>[] = [
-  // Workout A
-  { id: 1, name: 'Squat', baseWeight: 60, workoutDay: 'A' },
-  { id: 2, name: 'Overhead Press', baseWeight: 40, workoutDay: 'A' },
-  { id: 3, name: 'Deadlift', baseWeight: 80, workoutDay: 'A' },
+  // A. Dumbbell Goblet Squat
+  { id: 1, name: 'Dumbbell Goblet Squat', baseWeight: 10, workoutDay: 'A' },
   
-  // Workout B
-  { id: 4, name: 'Squat', baseWeight: 60, workoutDay: 'B' },
-  { id: 5, name: 'Bench Press', baseWeight: 50, workoutDay: 'B' },
-  { id: 6, name: 'Barbell Row', baseWeight: 45, workoutDay: 'B' },
+  // B. Push-Ups (bodyweight, weight = 0)
+  { id: 2, name: 'Push-Ups', baseWeight: 0, workoutDay: 'A' },
+  
+  // C. Dumbbell Overhead Press (Standing)
+  { id: 3, name: 'Dumbbell Overhead Press', baseWeight: 8, workoutDay: 'A' },
+  
+  // D. Dumbbell Romanian Deadlift (RDL)
+  { id: 4, name: 'Dumbbell Romanian Deadlift', baseWeight: 12, workoutDay: 'A' },
+  
+  // E. Dumbbell Bent-Over Row
+  { id: 5, name: 'Dumbbell Bent-Over Row', baseWeight: 10, workoutDay: 'A' },
+  
+  // F. Plank (bodyweight, weight = 0)
+  { id: 6, name: 'Plank', baseWeight: 0, workoutDay: 'A' },
 ];
 
 /**

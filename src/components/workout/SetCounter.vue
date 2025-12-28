@@ -59,11 +59,12 @@ const displayText = computed(() => {
   height: 100%;
   background: linear-gradient(
     90deg,
-    var(--color-accent) 0%,
-    var(--color-accent-hover) 100%
+    var(--color-gold) 0%,
+    var(--color-gold-hover) 100%
   );
   border-radius: var(--radius-full);
   transition: width 0.3s ease;
+  box-shadow: 0 0 4px var(--color-gold-light);
 }
 
 @media (min-width: 768px) {

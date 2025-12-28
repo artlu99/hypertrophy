@@ -333,7 +333,7 @@ watch(
 .settings-view__program-stat-value {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
-  color: var(--color-accent);
+  color: var(--color-gold);
 }
 
 .settings-view__warning {

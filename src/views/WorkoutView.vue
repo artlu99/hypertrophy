@@ -254,8 +254,10 @@ const isWorkoutComplete = computed(() => workoutStore.isWorkoutComplete());
 .workout-view__complete-title {
   font-size: var(--font-size-4xl);
   font-weight: var(--font-weight-extrabold);
-  color: var(--color-accent);
+  color: var(--color-gold);
   margin: 0;
+  text-shadow: 0 2px 8px var(--color-gold-light);
+  letter-spacing: var(--letter-spacing-tight);
 }
 
 .workout-view__complete-message {

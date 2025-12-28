@@ -1,39 +1,48 @@
 /**
- * Dark Mode Theme System
- * CSS Variables for consistent theming across the app
+ * Adidas-Inspired Theme System
+ * Black & White High-Contrast Athletic Design
  */
 
 :root {
-  /* Colors - Dark Theme (Primary) */
-  --color-bg-primary: #0a0a0a;
+  /* Colors - Adidas Black & White Theme */
+  --color-bg-primary: #000000;
   --color-bg-secondary: #1a1a1a;
   --color-bg-tertiary: #2a2a2a;
   
   --color-text-primary: #ffffff;
-  --color-text-secondary: #b0b0b0;
-  --color-text-muted: #707070;
+  --color-text-secondary: #cccccc;
+  --color-text-muted: #999999;
   
-  /* Accent Colors - Trophy Gold Theme */
-  --color-accent: #FFD700;
-  --color-accent-hover: #FFA500;
-  --color-accent-active: #FF8C00;
+  /* Accent Colors - Adidas White Accent */
+  --color-accent: #ffffff;
+  --color-accent-hover: #f0f0f0;
+  --color-accent-active: #e0e0e0;
   
-  /* Status Colors */
-  --color-success: #4ade80;
-  --color-warning: #fbbf24;
-  --color-error: #ef4444;
-  --color-info: #60a5fa;
+  /* Gold Highlights - Tasteful Accent */
+  --color-gold: #FFD700;
+  --color-gold-hover: #FFA500;
+  --color-gold-active: #FF8C00;
+  --color-gold-light: rgba(255, 215, 0, 0.2);
   
-  /* Border Colors */
+  /* Status Colors - High Contrast */
+  --color-success: #00ff00;
+  --color-warning: #ffff00;
+  --color-error: #ff0000;
+  --color-info: #ffffff;
+  
+  /* Border Colors - Adidas Style */
   --color-border: #333333;
-  --color-border-light: #404040;
+  --color-border-light: #4a4a4a;
+  --color-border-accent: #ffffff;
   
-  /* Button Colors */
+  /* Button Colors - Adidas High Contrast */
   --color-button-bg: var(--color-accent);
   --color-button-text: #000000;
   --color-button-hover: var(--color-accent-hover);
   --color-button-active: var(--color-accent-active);
-  --color-button-disabled: #555555;
+  --color-button-disabled: #333333;
+  --color-button-secondary-bg: transparent;
+  --color-button-secondary-border: #ffffff;
   
   /* Spacing */
   --spacing-xs: 0.25rem;
@@ -44,12 +53,17 @@
   --spacing-2xl: 3rem;
   --spacing-3xl: 4rem;
   
-  /* Typography */
-  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  /* Typography - Adidas Bold Sporty Style */
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   --font-weight-normal: 400;
-  --font-weight-medium: 500;
+  --font-weight-medium: 600;
   --font-weight-bold: 700;
-  --font-weight-extrabold: 800;
+  --font-weight-extrabold: 900;
+  
+  /* Letter Spacing - Tighter for Athletic Look */
+  --letter-spacing-tight: -0.02em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.05em;
   
   /* Font Sizes - Mobile First */
   --font-size-xs: 0.75rem;
@@ -171,10 +185,32 @@ body {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* Focus Styles for Accessibility */
+/* Focus Styles for Accessibility - Adidas High Contrast */
 *:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+/* Three Stripe Pattern Utility - Adidas Signature */
+.three-stripes {
+  position: relative;
+}
+
+.three-stripes::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  background: repeating-linear-gradient(
+    to right,
+    var(--color-accent) 0,
+    var(--color-accent) 3px,
+    transparent 3px,
+    transparent 6px
+  );
+  opacity: 0.8;
 }
 
 /* Remove default button styles */
@@ -201,9 +237,31 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Selection styles */
+/* Selection styles - Adidas High Contrast */
 ::selection {
   background-color: var(--color-accent);
   color: var(--color-bg-primary);
+}
+
+/* Adidas-Inspired Utility Classes */
+.stripes-pattern {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255, 255, 255, 0.03) 10px,
+    rgba(255, 255, 255, 0.03) 20px
+  );
+}
+
+.bold-text {
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: var(--letter-spacing-tight);
+  text-transform: uppercase;
+}
+
+.high-contrast-border {
+  border: 2px solid var(--color-accent);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 

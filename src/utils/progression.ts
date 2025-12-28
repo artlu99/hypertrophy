@@ -6,25 +6,31 @@ import type { Exercise } from '../types/workout';
 
 /**
  * Weight increment per week (in kg)
+ * Based on 12 Week Plan: Progressive overload
+ * For dumbbell exercises, smaller increments (2.5kg = 1.25kg per dumbbell)
  * For lbs, multiply by 2.2
  */
-const WEIGHT_INCREMENT_WEEKS_1_4 = 2.5; // kg per week
-const WEIGHT_INCREMENT_WEEKS_9_12 = 5; // kg per week (larger increment)
+const WEIGHT_INCREMENT_WEEKS_1_2 = 0; // Weeks 1-2: Focus on form, no weight increase
+const WEIGHT_INCREMENT_WEEKS_3_12 = 2.5; // kg per week (1.25kg per dumbbell)
 
 /**
  * Get target reps for a given week
- * Weeks 1-4: 3 reps
- * Weeks 5-12: 5 reps
+ * Based on 12 Week Plan: 3 sets of 10-12 reps for most exercises
+ * Weeks 1-2: Focus on form, use 10 reps as target
+ * Weeks 3-12: Progressive overload, target 10-12 reps (use 11 as middle target)
  */
 export function getTargetReps(week: number): number {
-  if (week >= 1 && week <= 4) {
-    return 3;
+  if (week >= 1 && week <= 2) {
+    // Weeks 1-2: Focus on form, don't go to failure
+    return 10;
   }
-  if (week >= 5 && week <= 12) {
-    return 5;
+  if (week >= 3 && week <= 12) {
+    // Weeks 3-12: Progressive overload, aim for 10-12 reps
+    // Using 11 as the target (middle of 10-12 range)
+    return 11;
   }
   // Fallback
-  return 5;
+  return 11;
 }
 
 /**
@@ -36,42 +42,40 @@ export function getTargetSets(): number {
 
 /**
  * Calculate target weight for an exercise at a specific week
+ * Based on 12 Week Plan: Progressive overload
  * 
- * Weeks 1-4: Base Weight + ((Week - 1) × Increment)
- * Weeks 5-8: Maintain Week 4 weight (or slight deload)
- * Weeks 9-12: Week 8 Weight + ((Week - 8) × Larger Increment)
+ * Weeks 1-2: Base Weight (focus on form, no weight increase)
+ * Weeks 3-12: Base Weight + ((Week - 2) × Increment)
+ * 
+ * For bodyweight exercises (weight = 0), always return 0
  */
 export function getTargetWeight(
   exercise: Exercise,
   week: number,
   unit: 'kg' | 'lbs' = 'kg'
 ): number {
+  // Bodyweight exercises (Push-Ups, Plank) always return 0
+  if (exercise.baseWeight === 0) {
+    return 0;
+  }
+
   // Convert to kg if needed
   const baseWeightKg =
     unit === 'lbs' ? exercise.baseWeight / 2.20462 : exercise.baseWeight;
-  const increment1_4 =
+  const increment =
     unit === 'lbs'
-      ? WEIGHT_INCREMENT_WEEKS_1_4 * 2.20462
-      : WEIGHT_INCREMENT_WEEKS_1_4;
-  const increment9_12 =
-    unit === 'lbs'
-      ? WEIGHT_INCREMENT_WEEKS_9_12 * 2.20462
-      : WEIGHT_INCREMENT_WEEKS_9_12;
+      ? WEIGHT_INCREMENT_WEEKS_3_12 * 2.20462
+      : WEIGHT_INCREMENT_WEEKS_3_12;
 
   let targetWeight: number;
 
-  if (week >= 1 && week <= 4) {
-    // Weeks 1-4: Linear progression
-    targetWeight = baseWeightKg + (week - 1) * increment1_4;
-  } else if (week >= 5 && week <= 8) {
-    // Weeks 5-8: Maintain Week 4 weight
-    const week4Weight = baseWeightKg + 3 * increment1_4;
-    targetWeight = week4Weight;
-  } else if (week >= 9 && week <= 12) {
-    // Weeks 9-12: Larger increment from Week 8 weight
-    const week4Weight = baseWeightKg + 3 * increment1_4;
-    const week8Weight = week4Weight; // Same as week 4
-    targetWeight = week8Weight + (week - 8) * increment9_12;
+  if (week >= 1 && week <= 2) {
+    // Weeks 1-2: Focus on form, no weight increase
+    targetWeight = baseWeightKg;
+  } else if (week >= 3 && week <= 12) {
+    // Weeks 3-12: Progressive overload
+    // Start incrementing from week 3, so (week - 2) weeks of increments
+    targetWeight = baseWeightKg + (week - 2) * increment;
   } else {
     // Fallback: use current weight or base weight
     targetWeight = exercise.currentWeight || baseWeightKg;
@@ -87,13 +91,15 @@ export function getTargetWeight(
 /**
  * Determine if the program should advance to the next week
  * This happens when a workout is completed
+ * 
+ * Since all exercises (A-F) are in Workout A, advance week after completing Workout A
  */
 export function shouldAdvanceWeek(
   currentDay: 'A' | 'B',
   workoutCompleted: boolean
 ): boolean {
-  // Advance week when completing Workout B (completing a full cycle)
-  return workoutCompleted && currentDay === 'B';
+  // Advance week when completing Workout A (all exercises are in Workout A)
+  return workoutCompleted && currentDay === 'A';
 }
 
 /**
