@@ -129,6 +129,7 @@ watch(
         size="lg"
         full-width
         :disabled="disabled"
+        :aria-label="`Complete set ${props.currentSet} of ${props.targetSets} for ${exercise.name}`"
         @click="() => emit('complete-set')"
       />
       <div v-else class="exercise-card__complete">

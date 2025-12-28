@@ -184,6 +184,7 @@ export const useWorkoutStore = defineStore('workout', () => {
   function startWorkout() {
     const exercisesForDay = currentDayExercises.value;
     if (exercisesForDay.length === 0) {
+      console.warn('No exercises found for current day');
       return;
     }
 

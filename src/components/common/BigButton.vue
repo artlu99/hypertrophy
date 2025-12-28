@@ -42,7 +42,14 @@ function handleClick() {
 </script>
 
 <template>
-  <button :class="buttonClass" :disabled="disabled" @click="handleClick">
+  <button
+    :class="buttonClass"
+    :disabled="disabled"
+    :aria-label="label"
+    :aria-disabled="disabled"
+    @click="handleClick"
+    type="button"
+  >
     <span class="big-button__label">{{ label }}</span>
   </button>
 </template>

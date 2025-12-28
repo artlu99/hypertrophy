@@ -13,10 +13,30 @@ const workoutStore = useWorkoutStore();
 const showRestTimer = ref(false);
 const wakeLock = ref<WakeLockSentinel | null>(null);
 
+// Keyboard navigation handler
+function handleKeyDown(e: KeyboardEvent) {
+  if (e.key === 'ArrowLeft' && workoutStore.canGoPrevious) {
+    e.preventDefault();
+    handlePreviousExercise();
+  } else if (e.key === 'ArrowRight' && workoutStore.canGoNext) {
+    e.preventDefault();
+    handleNextExercise();
+  }
+}
+
 // Initialize workout when component mounts
 onMounted(() => {
   if (!workoutStore.isWorkoutActive) {
-    workoutStore.startWorkout();
+    try {
+      workoutStore.startWorkout();
+      if (!workoutStore.isWorkoutActive) {
+        // Failed to start workout, redirect to dashboard
+        router.push('/');
+      }
+    } catch (error) {
+      console.error('Failed to start workout:', error);
+      router.push('/');
+    }
   }
   
   // Request wake lock to keep screen on during workout
@@ -26,19 +46,27 @@ onMounted(() => {
       .then((lock) => {
         wakeLock.value = lock;
       })
-      .catch(() => {
+      .catch((error) => {
         // Wake lock request failed, continue anyway
+        console.warn('Wake lock request failed:', error);
       });
   }
+  
+  // Add keyboard navigation support
+  window.addEventListener('keydown', handleKeyDown);
 });
 
-// Release wake lock when component unmounts
+// Cleanup when component unmounts
 onUnmounted(() => {
+  // Release wake lock
   if (wakeLock.value) {
     wakeLock.value.release().catch(() => {
       // Ignore errors
     });
   }
+  
+  // Remove keyboard listener
+  window.removeEventListener('keydown', handleKeyDown);
 });
 
 const currentExercise = computed(() => workoutStore.getCurrentExercise());
@@ -154,6 +182,7 @@ const isWorkoutComplete = computed(() => workoutStore.isWorkoutComplete());
             :disabled="!workoutStore.canGoPrevious"
             @click="handlePreviousExercise"
             aria-label="Previous exercise"
+            type="button"
           >
             ←
           </button>
@@ -166,25 +195,29 @@ const isWorkoutComplete = computed(() => workoutStore.isWorkoutComplete());
             :disabled="!workoutStore.canGoNext"
             @click="handleNextExercise"
             aria-label="Next exercise"
+            type="button"
           >
             →
           </button>
         </div>
 
-        <ExerciseCard
-          :exercise="currentExercise"
-          :target-weight="targetWeight"
-          :target-reps="targetReps"
-          :target-sets="targetSets"
-          :current-set="exerciseProgress.currentSet"
-          :current-weight="currentWeight"
-          :unit="workoutStore.unit"
-          :show-rest-timer="showRestTimer && !isCurrentExerciseComplete"
-          :disabled="isCurrentExerciseComplete"
-          @weight-change="handleWeightChange"
-          @complete-set="handleCompleteSet"
-          @rest-complete="handleRestComplete"
-        />
+        <Transition name="exercise-card" mode="out-in">
+          <ExerciseCard
+            :key="currentExercise.id"
+            :exercise="currentExercise"
+            :target-weight="targetWeight"
+            :target-reps="targetReps"
+            :target-sets="targetSets"
+            :current-set="exerciseProgress.currentSet"
+            :current-weight="currentWeight"
+            :unit="workoutStore.unit"
+            :show-rest-timer="showRestTimer && !isCurrentExerciseComplete"
+            :disabled="isCurrentExerciseComplete"
+            @weight-change="handleWeightChange"
+            @complete-set="handleCompleteSet"
+            @rest-complete="handleRestComplete"
+          />
+        </Transition>
 
         <div class="workout-view__footer">
           <BigButton
@@ -293,6 +326,21 @@ const isWorkoutComplete = computed(() => workoutStore.isWorkoutComplete());
   display: flex;
   justify-content: center;
   padding-top: var(--spacing-md);
+}
+
+.exercise-card-enter-active,
+.exercise-card-leave-active {
+  transition: all 0.3s ease;
+}
+
+.exercise-card-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.exercise-card-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
 }
 
 @media (min-width: 768px) {
