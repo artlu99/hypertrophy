@@ -64,6 +64,6 @@ TypeScript cannot handle type information for `.vue` imports by default, so we r
 
 Photo by <a href="https://unsplash.com/@pbulwan?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Paweł Bulwan</a> on <a href="https://unsplash.com/photos/a-black-and-white-photo-of-a-dumbbell-JWK2H-2qz1Y?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
       
-Photo by <a href="https://unsplash.com/@pbulwan?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Paweł Bulwan</a> on <a href="https://unsplash.com/photos/a-black-and-white-photo-of-a-dumbbell-JWK2H-2qz1Y?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+Photo by <a href="https://unsplash.com/@stevep93?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Stavros Papadimitriou</a> on <a href="https://unsplash.com/photos/a-pair-of-dumbbells-a-towel-and-a-pair-of-dumbbells-60xqDdncSKY?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
 Photo by <a href="https://unsplash.com/@weareambitious?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Ambitious Studio* | Rick Barrett</a> on <a href="https://unsplash.com/photos/a-man-holding-a-gym-equipment-in-a-gym-IXPKJcrOZCI?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
