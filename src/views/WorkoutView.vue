@@ -250,13 +250,13 @@ useSwipe(swipeContainer, {
             {{ workoutStore.activeWorkout!.exercises.length }}
           </div>
           <button
-            class="workout-view__nav-button"
-            :disabled="!workoutStore.canGoNext"
-            @click="handleNextExercise"
-            aria-label="Next exercise"
+            class="workout-view__cancel-button"
+            @click="handleCancelWorkout"
+            aria-label="Cancel workout"
             type="button"
+            title="Cancel workout"
           >
-            →
+            ✕
           </button>
         </div>
 
@@ -284,13 +284,19 @@ useSwipe(swipeContainer, {
           </Transition>
         </div>
 
-        <div class="workout-view__footer">
+        <div class="workout-view__sticky-footer">
           <BigButton
-            label="Cancel Workout"
-            variant="danger"
-            size="sm"
-            @click="handleCancelWorkout"
+            v-if="!isCurrentExerciseComplete"
+            label="COMPLETE SET"
+            variant="success"
+            size="lg"
+            full-width
+            @click="handleCompleteSet"
           />
+          <div v-else class="workout-view__exercise-complete">
+            <p class="workout-view__complete-message">Exercise Complete! ✓</p>
+            <p class="workout-view__complete-hint">Swipe or use arrows to continue</p>
+          </div>
         </div>
       </div>
     </ScreenContainer>
@@ -339,6 +345,7 @@ useSwipe(swipeContainer, {
   min-height: 0;
   overflow: hidden;
   touch-action: pan-y;
+  padding-bottom: 100px; /* Space for sticky footer */
 }
 
 .workout-view__header {
@@ -385,6 +392,35 @@ useSwipe(swipeContainer, {
   cursor: not-allowed;
 }
 
+.workout-view__cancel-button {
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg-tertiary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.workout-view__cancel-button:hover {
+  background-color: var(--color-error);
+  border-color: var(--color-error);
+  color: var(--color-text-primary);
+  transform: scale(1.05);
+}
+
+.workout-view__cancel-button:active {
+  transform: scale(0.95);
+}
+
 .workout-view__exercise-counter {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-bold);
@@ -401,11 +437,42 @@ useSwipe(swipeContainer, {
   overflow: hidden;
 }
 
-.workout-view__footer {
+.workout-view__sticky-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--spacing-md);
+  padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
+  background-color: var(--color-bg-primary);
+  border-top: 2px solid var(--color-border);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  max-width: 100vw;
+}
+
+.workout-view__exercise-complete {
   display: flex;
-  justify-content: center;
-  padding-top: var(--spacing-sm);
-  flex-shrink: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  background-color: var(--color-success);
+  border-radius: var(--radius-lg);
+  opacity: 0.9;
+}
+
+.workout-view__complete-message {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.workout-view__complete-hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
 }
 
 .exercise-card-enter-active,
@@ -432,6 +499,16 @@ useSwipe(swipeContainer, {
     min-width: 56px;
     min-height: 56px;
     font-size: var(--font-size-3xl);
+  }
+
+  .workout-view__cancel-button {
+    min-width: 56px;
+    min-height: 56px;
+    font-size: var(--font-size-2xl);
+  }
+
+  .workout-view__active {
+    padding-bottom: 140px; /* More space for larger sticky footer on desktop */
   }
 }
 </style>

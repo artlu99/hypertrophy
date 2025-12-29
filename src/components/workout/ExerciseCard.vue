@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
 import type { Exercise } from '../../types/workout';
-import BigButton from '../common/BigButton.vue';
 import ExerciseTimer from '../common/ExerciseTimer.vue';
 import RepsAdjuster from '../common/RepsAdjuster.vue';
 import RestTimer from '../common/RestTimer.vue';
@@ -130,8 +129,6 @@ watch(
       </div>
     </div>
 
-    <SetCounter :current-set="currentSet" :total-sets="targetSets" />
-
     <!-- Weight-based exercises -->
     <div v-if="isWeightBased" class="exercise-card__weight-section">
       <div class="exercise-card__current-weight">
@@ -149,6 +146,7 @@ watch(
           <span v-else>{{ Math.abs(weightDifference).toFixed(unit === 'kg' ? 1 : 0) }} {{ unit }} below target</span>
         </div>
       </div>
+      <SetCounter :current-set="currentSet" :total-sets="targetSets" />
     </div>
 
     <!-- Reps-based exercises (Push-Ups) -->
@@ -164,6 +162,7 @@ watch(
         />
         <p class="exercise-card__reps-hint">Do as many reps as possible (to failure)</p>
       </div>
+      <SetCounter :current-set="currentSet" :total-sets="targetSets" />
     </div>
 
     <!-- Time-based exercises (Plank) -->
@@ -176,6 +175,7 @@ watch(
         @complete="() => emit('complete-set')"
         @time-change="(time) => emit('time-change', time)"
       />
+      <SetCounter :current-set="currentSet" :total-sets="targetSets" />
     </div>
 
     <div v-if="showRestTimer" class="exercise-card__rest">
@@ -185,23 +185,6 @@ watch(
         :auto-start="false"
         @complete="() => emit('rest-complete')"
       />
-    </div>
-
-    <div class="exercise-card__actions">
-      <BigButton
-        v-if="!isExerciseComplete"
-        label="COMPLETE SET"
-        variant="success"
-        size="lg"
-        full-width
-        :disabled="disabled"
-        :aria-label="`Complete set ${props.currentSet} of ${props.targetSets} for ${exercise.name}`"
-        @click="() => emit('complete-set')"
-      />
-      <div v-else class="exercise-card__complete">
-        <p class="exercise-card__complete-message">Exercise Complete! ✓</p>
-        <p class="exercise-card__complete-hint">Move to next exercise or finish workout</p>
-      </div>
     </div>
   </div>
 </template>
@@ -281,7 +264,7 @@ watch(
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
 .exercise-card__current-label {
@@ -345,7 +328,7 @@ watch(
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
 .exercise-card__reps-hint {
@@ -362,36 +345,6 @@ watch(
 
 .exercise-card__rest {
   width: 100%;
-}
-
-.exercise-card__actions {
-  width: 100%;
-  padding-top: var(--spacing-xs);
-  flex-shrink: 0;
-}
-
-.exercise-card__complete {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-md);
-  background-color: var(--color-success);
-  border-radius: var(--radius-lg);
-  opacity: 0.9;
-}
-
-.exercise-card__complete-message {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
-  margin: 0;
-}
-
-.exercise-card__complete-hint {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  margin: 0;
 }
 
 @media (min-width: 768px) {

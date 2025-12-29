@@ -168,7 +168,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   padding: var(--spacing-lg);
   background-color: var(--color-bg-secondary);
   border-radius: var(--radius-lg);
