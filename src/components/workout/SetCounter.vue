@@ -39,7 +39,7 @@ const displayText = computed(() => {
 }
 
 .set-counter__text {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   text-transform: uppercase;

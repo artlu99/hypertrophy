@@ -8,6 +8,8 @@ A Progressive Web App (PWA) for tracking progressive strength training over a 12
 - **Installable**: Can be installed on phone like a native app without App Store overhead
 - **Thumb-Friendly**: Large buttons, minimal typing, high contrast for gym use
 - **Progressive Tracking**: Automatically calculates weight and rep targets based on 12-week program
+- **Circuit-Style Workouts**: Complete all exercises in a set before moving to the next set
+- **Adjustable Rest Timer**: Customize rest duration with ±15 second controls
 - **Dark Mode**: Saves battery on OLED screens, easier to read in gyms
 
 ## Tech Stack

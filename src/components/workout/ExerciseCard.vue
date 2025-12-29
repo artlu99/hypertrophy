@@ -26,12 +26,8 @@ const props = withDefaults(defineProps<Props>(), {
   showRestTimer: false,
   restDuration: 90,
   disabled: false,
-  currentReps: 10,
+  currentReps: 15,
   currentTime: 30,
-});
-
-const isExerciseComplete = computed(() => {
-  return props.currentSet > props.targetSets;
 });
 
 const emit = defineEmits<{
@@ -77,8 +73,6 @@ const displayWeight = computed(() => {
   return 'Bodyweight';
 });
 
-const exerciseTimerRef = ref<InstanceType<typeof ExerciseTimer> | null>(null);
-
 const weightDifference = computed(() => {
   const diff = props.currentWeight - props.targetWeight;
   if (Math.abs(diff) < 0.1) return 0;
@@ -118,13 +112,10 @@ watch(
           <span class="exercise-card__target-label">Target Weight</span>
           <span class="exercise-card__target-value">{{ displayWeight }}</span>
         </div>
-        <div v-if="isTimeBased" class="exercise-card__target">
-          <span class="exercise-card__target-label">Target Time</span>
-          <span class="exercise-card__target-value">{{ Math.floor((currentTime || 30) / 60) }}:{{ ((currentTime || 30) % 60).toString().padStart(2, '0') }}</span>
-        </div>
-        <div class="exercise-card__target">
-          <span class="exercise-card__target-label">{{ isTimeBased ? 'Sets' : 'Target Reps' }}</span>
-          <span class="exercise-card__target-value">{{ isTimeBased ? targetSets : targetReps }}</span>
+        <div v-if="isTimeBased" class="exercise-card__target"></div>
+        <div v-if="!isTimeBased" class="exercise-card__target">
+          <span class="exercise-card__target-label">Target Reps</span>
+          <span class="exercise-card__target-value">{{ targetReps }}</span>
         </div>
       </div>
     </div>
@@ -132,7 +123,6 @@ watch(
     <!-- Weight-based exercises -->
     <div v-if="isWeightBased" class="exercise-card__weight-section">
       <div class="exercise-card__current-weight">
-        <span class="exercise-card__current-label">Current Weight</span>
         <WeightAdjuster
           :value="currentWeight"
           :unit="unit"
@@ -146,13 +136,11 @@ watch(
           <span v-else>{{ Math.abs(weightDifference).toFixed(unit === 'kg' ? 1 : 0) }} {{ unit }} below target</span>
         </div>
       </div>
-      <SetCounter :current-set="currentSet" :total-sets="targetSets" />
     </div>
 
     <!-- Reps-based exercises (Push-Ups) -->
     <div v-else-if="isRepsBased" class="exercise-card__reps-section">
       <div class="exercise-card__current-reps">
-        <span class="exercise-card__current-label">Reps Completed</span>
         <RepsAdjuster
           :value="currentReps"
           :min="0"
@@ -162,7 +150,6 @@ watch(
         />
         <p class="exercise-card__reps-hint">Do as many reps as possible (to failure)</p>
       </div>
-      <SetCounter :current-set="currentSet" :total-sets="targetSets" />
     </div>
 
     <!-- Time-based exercises (Plank) -->
@@ -175,8 +162,9 @@ watch(
         @complete="() => emit('complete-set')"
         @time-change="(time) => emit('time-change', time)"
       />
-      <SetCounter :current-set="currentSet" :total-sets="targetSets" />
     </div>
+
+    <SetCounter :current-set="currentSet" :total-sets="targetSets" />
 
     <div v-if="showRestTimer" class="exercise-card__rest">
       <RestTimer
@@ -265,14 +253,6 @@ watch(
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-xs);
-}
-
-.exercise-card__current-label {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .exercise-card__weight-diff {

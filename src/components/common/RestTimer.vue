@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
 interface Props {
 	duration: number; // Duration in seconds
@@ -16,15 +16,17 @@ const emit = defineEmits<{
 	complete: [];
 }>();
 
+const currentDuration = ref(props.duration); // Adjustable duration
 const timeRemaining = ref(props.duration);
-const isRunning = ref(props.autoStart);
+const isRunning = ref(false); // Will be set to true when start() is called
+const isComplete = ref(false); // Track if timer reached zero
 const intervalId = ref<number | null>(null);
 
 const minutes = computed(() => Math.floor(timeRemaining.value / 60));
 const seconds = computed(() => timeRemaining.value % 60);
 
 const progress = computed(() => {
-	return (timeRemaining.value / props.duration) * 100;
+	return (timeRemaining.value / currentDuration.value) * 100;
 });
 
 const timeDisplay = computed(() => {
@@ -33,10 +35,27 @@ const timeDisplay = computed(() => {
 		.padStart(2, "0")}`;
 });
 
+function adjustDuration(seconds: number) {
+	const newDuration = Math.max(15, Math.min(600, currentDuration.value + seconds));
+	const difference = newDuration - currentDuration.value;
+	currentDuration.value = newDuration;
+	// If running, adjust timeRemaining accordingly
+	if (isRunning.value) {
+		timeRemaining.value = Math.max(0, timeRemaining.value + difference);
+		// If we've extended the duration and timer was complete, restart it
+		if (timeRemaining.value > 0 && intervalId.value === null) {
+			tick();
+		}
+	} else {
+		timeRemaining.value = newDuration;
+	}
+}
+
 function start() {
 	if (isRunning.value) return;
 	isRunning.value = true;
-	timeRemaining.value = props.duration;
+	isComplete.value = false;
+	timeRemaining.value = currentDuration.value;
 	tick();
 }
 
@@ -50,7 +69,8 @@ function stop() {
 
 function reset() {
 	stop();
-	timeRemaining.value = props.duration;
+	timeRemaining.value = currentDuration.value;
+	isComplete.value = false;
 }
 
 function tick() {
@@ -62,17 +82,21 @@ function tick() {
 		if (timeRemaining.value > 0) {
 			timeRemaining.value -= 1;
 		} else {
-			complete();
+			// Timer reached zero - stop but don't auto-complete
+			stop();
+			isComplete.value = true;
+			// Vibration feedback
+			if (navigator.vibrate) {
+				navigator.vibrate([200, 100, 200]);
+			}
 		}
 	}, 1000);
 }
 
 function complete() {
 	stop();
-	emit("complete");
-	if (props.onComplete) {
-		props.onComplete();
-	}
+	// Don't auto-emit complete - let user manually proceed
+	// Just stop the timer and show completion state
 	// Vibration feedback
 	if (navigator.vibrate) {
 		navigator.vibrate([200, 100, 200]);
@@ -83,14 +107,19 @@ watch(
 	() => props.duration,
 	(newDuration) => {
 		if (!isRunning.value) {
+			currentDuration.value = newDuration;
 			timeRemaining.value = newDuration;
 		}
 	},
 );
 
-onMounted(() => {
+onMounted(async () => {
 	if (props.autoStart) {
-		start();
+		// Small delay to ensure component is fully rendered
+		await nextTick();
+		setTimeout(() => {
+			start();
+		}, 100);
 	}
 });
 
@@ -102,23 +131,38 @@ defineExpose({
 	start,
 	stop,
 	reset,
+	get isRunning() { return isRunning.value; },
+	get isComplete() { return isComplete.value; },
 });
 </script>
 
 <template>
   <div class="rest-timer">
-    <div class="rest-timer__display">
-      <div class="rest-timer__time">{{ timeDisplay }}</div>
-      <div class="rest-timer__label">Rest</div>
+    <div class="rest-timer__controls">
+      <button 
+        class="rest-timer__adjust-button" 
+        @click="adjustDuration(-15)"
+        :disabled="currentDuration <= 15"
+      >
+        -15 sec
+      </button>
+      <div class="rest-timer__display">
+        <div class="rest-timer__time">{{ timeDisplay }}</div>
+        <div class="rest-timer__label">Rest</div>
+      </div>
+      <button 
+        class="rest-timer__adjust-button" 
+        @click="adjustDuration(15)"
+        :disabled="currentDuration >= 600"
+      >
+        +15 sec
+      </button>
     </div>
     <div class="rest-timer__progress">
       <div
         class="rest-timer__progress-fill"
         :style="{ width: `${progress}%` }"
       />
-    </div>
-    <div v-if="!isRunning && timeRemaining === duration" class="rest-timer__actions">
-      <button class="rest-timer__button" @click="start">Start Rest</button>
     </div>
   </div>
 </template>
@@ -135,11 +179,49 @@ defineExpose({
   border: 1px solid var(--color-border);
 }
 
+.rest-timer__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  width: 100%;
+  justify-content: center;
+}
+
+.rest-timer__adjust-button {
+  min-width: 80px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rest-timer__adjust-button:hover:not(:disabled) {
+  background-color: var(--color-bg-secondary);
+  border-color: var(--color-accent);
+  transform: scale(1.05);
+}
+
+.rest-timer__adjust-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.rest-timer__adjust-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .rest-timer__display {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-xs);
+  flex: 1;
 }
 
 .rest-timer__time {

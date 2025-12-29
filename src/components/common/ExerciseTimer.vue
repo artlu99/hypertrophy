@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 interface Props {
   duration: number; // Duration in seconds
@@ -277,7 +277,7 @@ defineExpose({
   color: var(--color-bg-primary);
   border-radius: var(--radius-md);
   font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-4xl);
   cursor: pointer;
   transition: all var(--transition-base);
   -webkit-tap-highlight-color: transparent;

@@ -18,17 +18,17 @@ import type { Exercise } from '../types/workout';
  */
 export const DEFAULT_EXERCISES: Omit<Exercise, 'currentWeight'>[] = [
   // A. Dumbbell Goblet Squat
-  { id: 1, name: 'Dumbbell Goblet Squat', baseWeight: 10, workoutDay: 'A', trackingType: 'weight' },
+  { id: 1, name: 'Dumbbell Goblet Squat', baseWeight: 20, workoutDay: 'A', trackingType: 'weight' },
   
   // B. Push-Ups (reps-based, track reps instead of weight)
   // baseReps defaults to week-based target (10 for weeks 1-2, 11 for weeks 3-12)
-  { id: 2, name: 'Push-Ups', baseWeight: 0, workoutDay: 'A', trackingType: 'reps', baseReps: 10 },
+  { id: 2, name: 'Push-Ups', baseWeight: 0, workoutDay: 'A', trackingType: 'reps', baseReps: 15 },
   
   // C. Dumbbell Overhead Press (Standing)
-  { id: 3, name: 'Dumbbell Overhead Press', baseWeight: 10, workoutDay: 'A', trackingType: 'weight' },
+  { id: 3, name: 'Dumbbell Overhead Press', baseWeight: 20, workoutDay: 'A', trackingType: 'weight' },
   
   // D. Dumbbell Romanian Deadlift (RDL)
-  { id: 4, name: 'Dumbbell Romanian Deadlift', baseWeight: 10, workoutDay: 'A', trackingType: 'weight' },
+  { id: 4, name: 'Dumbbell Romanian Deadlift', baseWeight: 20, workoutDay: 'A', trackingType: 'weight' },
   
   // E. Dumbbell Bent-Over Row
   { id: 5, name: 'Dumbbell Bent-Over Row', baseWeight: 10, workoutDay: 'A', trackingType: 'weight' },

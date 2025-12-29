@@ -59,9 +59,11 @@ function createInitialState(): WorkoutState {
 // Active workout state (not persisted, only during active workout)
 interface ActiveWorkoutState {
   currentExerciseIndex: number;
+  currentSet: number; // Current set number (1-3) across all exercises
   exercises: Exercise[];
   completedExercises: CompletedExercise[];
   startTime: string; // ISO date string
+  completionDate: string | null; // ISO date string when workout is completed
   // Track current values for active exercise
   currentReps: Map<number, number>; // exerciseId -> current reps
   currentTime: Map<number, number>; // exerciseId -> current target time (seconds)
@@ -210,12 +212,14 @@ export const useWorkoutStore = defineStore("workout", () => {
 
     activeWorkout.value = {
       currentExerciseIndex: 0,
+      currentSet: 1,
       exercises: exercisesForDay,
       completedExercises: exercisesForDay.map((ex) => ({
         exerciseId: ex.id,
         sets: [],
       })),
       startTime: new Date().toISOString(),
+      completionDate: null,
       currentReps: new Map(),
       currentTime: new Map(
         exercisesForDay
@@ -245,7 +249,8 @@ export const useWorkoutStore = defineStore("workout", () => {
       (ex) => ex.exerciseId === currentEx.id,
     );
     const completedSets = completedEx?.sets || [];
-    const currentSet = completedSets.length + 1;
+    // Use the global currentSet instead of counting completed sets
+    const currentSet = activeWorkout.value.currentSet;
     const totalSets = getTargetSetsForWeek();
 
     return {
@@ -323,7 +328,7 @@ export const useWorkoutStore = defineStore("workout", () => {
       actualReps = 0; // No reps for time-based
     }
 
-    // Add the completed set
+    // Add the completed set for the current set number
     completedEx.sets.push({
       weight: actualWeight,
       reps: actualReps,
@@ -357,18 +362,36 @@ export const useWorkoutStore = defineStore("workout", () => {
 
   function nextExercise() {
     if (!activeWorkout.value) return;
-    if (
-      activeWorkout.value.currentExerciseIndex <
-      activeWorkout.value.exercises.length - 1
-    ) {
+    
+    // Check if we're on the last exercise of the current set
+    const isLastExercise = activeWorkout.value.currentExerciseIndex === activeWorkout.value.exercises.length - 1;
+    const targetSets = getTargetSetsForWeek();
+    const isLastSet = activeWorkout.value.currentSet >= targetSets;
+    
+    if (isLastExercise && isLastSet) {
+      // We're done with all sets of all exercises - workout is complete
+      return;
+    } else if (isLastExercise) {
+      // Move to next set and reset to first exercise
+      activeWorkout.value.currentSet += 1;
+      activeWorkout.value.currentExerciseIndex = 0;
+    } else {
+      // Move to next exercise in the same set
       activeWorkout.value.currentExerciseIndex += 1;
     }
   }
 
   function previousExercise() {
     if (!activeWorkout.value) return;
+    
+    // Check if we're on the first exercise of the current set
     if (activeWorkout.value.currentExerciseIndex > 0) {
+      // Move to previous exercise in the same set
       activeWorkout.value.currentExerciseIndex -= 1;
+    } else if (activeWorkout.value.currentSet > 1) {
+      // Move to previous set and go to last exercise
+      activeWorkout.value.currentSet -= 1;
+      activeWorkout.value.currentExerciseIndex = activeWorkout.value.exercises.length - 1;
     }
   }
 
@@ -378,7 +401,19 @@ export const useWorkoutStore = defineStore("workout", () => {
       (ex) => ex.exerciseId === exerciseId,
     );
     if (!completedEx) return false;
+    // An exercise is complete when it has completed all sets
     return completedEx.sets.length >= getTargetSetsForWeek();
+  }
+  
+  function isCurrentSetCompleteForExercise(exerciseId: number): boolean {
+    if (!activeWorkout.value) return false;
+    const completedEx = activeWorkout.value.completedExercises.find(
+      (ex) => ex.exerciseId === exerciseId,
+    );
+    if (!completedEx) return false;
+    // Check if this exercise has completed the current set
+    // The current set number should match the number of sets completed for this exercise
+    return completedEx.sets.length >= activeWorkout.value.currentSet;
   }
 
   function isWorkoutComplete(): boolean {
@@ -391,8 +426,12 @@ export const useWorkoutStore = defineStore("workout", () => {
   function finishWorkout() {
     if (!activeWorkout.value) return;
 
+    // Store completion date
+    const completionDate = new Date().toISOString();
+    activeWorkout.value.completionDate = completionDate;
+
     const session: WorkoutSession = {
-      date: activeWorkout.value.startTime,
+      date: completionDate, // Use completion date instead of start time
       week: currentWeek.value,
       day: currentDay.value,
       exercises: activeWorkout.value.completedExercises,
@@ -462,7 +501,15 @@ export const useWorkoutStore = defineStore("workout", () => {
   });
   const canGoPrevious = computed(() => {
     if (!activeWorkout.value) return false;
-    return activeWorkout.value.currentExerciseIndex > 0;
+    return activeWorkout.value.currentExerciseIndex > 0 || activeWorkout.value.currentSet > 1;
+  });
+  
+  const isLastExerciseOfLastSet = computed(() => {
+    if (!activeWorkout.value) return false;
+    const isLastExercise = activeWorkout.value.currentExerciseIndex === activeWorkout.value.exercises.length - 1;
+    const targetSets = getTargetSetsForWeek();
+    const isLastSet = activeWorkout.value.currentSet >= targetSets;
+    return isLastExercise && isLastSet;
   });
 
   return {
@@ -493,6 +540,7 @@ export const useWorkoutStore = defineStore("workout", () => {
     isWorkoutActive,
     canGoNext,
     canGoPrevious,
+    isLastExerciseOfLastSet,
     startWorkout,
     getCurrentExercise,
     getCurrentExerciseProgress,
@@ -505,6 +553,7 @@ export const useWorkoutStore = defineStore("workout", () => {
     nextExercise,
     previousExercise,
     isExerciseComplete,
+    isCurrentSetCompleteForExercise,
     isWorkoutComplete,
     finishWorkout,
     cancelWorkout,

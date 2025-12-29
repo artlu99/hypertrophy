@@ -48,13 +48,19 @@
    - Shows target weight & reps (auto-calculated)
    - Weight adjustment buttons (`+` / `-`) with visual feedback
    - Set counter (e.g., "Set 1 / 3") with progress bar
-   - "COMPLETE SET" button with haptic feedback
-   - Rest timer (90s for accessory, 3min for main lifts, manual start)
+   - **Circuit-style progression**: Complete all exercises in a set before moving to next set
+     - Set 1: A1 → A2 → A3 → A4 → A5 → A6 → (rest) → Set 2
+     - Set 2: A1 → A2 → A3 → A4 → A5 → A6 → (rest) → Set 3
+     - Set 3: A1 → A2 → A3 → A4 → A5 → A6 → (complete)
+   - Button labels: "NEXT EXERCISE" (during set), "REST BREAK" (after completing all exercises in a set), "NEXT SET" or "COMPLETE WORKOUT" (after rest completes)
+   - Rest timer (90s for accessory, 3min for main lifts, adjustable ±15s, manual start)
+     - Replaces exercise card on screen (not shown below)
    - Navigation: Next/Previous exercise buttons (keyboard support with Arrow keys)
    - Wake Lock API (keeps screen on during workout)
    - Workout completion flow with success screen
    - Auto-save progress to localStorage on set completion
    - Smooth transitions between exercises
+   - Completion date stored when workout is finished
 
 3. **History & Settings (`/history` and `/settings`)** ✅
    - Workout history list with date formatting and stats
@@ -233,9 +239,12 @@ function shouldAdvanceWeek(currentDay: 'A' | 'B', workoutCompleted: boolean): bo
    navigator.wakeLock?.request('screen')
    ```
 
-2. **Rest Timer**: Manual start after set completion
+2. **Rest Timer**: Manual start after completing all exercises in a set
    - 90 seconds for accessory work
    - 3 minutes (180s) for main lifts
+   - Adjustable duration: ±15 seconds (visible while running)
+   - Replaces exercise card on screen during rest period
+   - Does not auto-start or auto-proceed - requires user click to start and to proceed
    - Vibration on completion
 
 3. **Haptic Feedback**: Confirm button presses

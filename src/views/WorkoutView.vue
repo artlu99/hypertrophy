@@ -1,18 +1,20 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useSwipe } from '../composables/useSwipe';
-import { useWorkoutStore } from '../stores/workout';
+import BigButton from '../components/common/BigButton.vue';
+import RestTimer from '../components/common/RestTimer.vue';
 import AppLayout from '../components/layout/AppLayout.vue';
 import ScreenContainer from '../components/layout/ScreenContainer.vue';
-import BigButton from '../components/common/BigButton.vue';
 import ExerciseCard from '../components/workout/ExerciseCard.vue';
+import { useSwipe } from '../composables/useSwipe';
+import { useWorkoutStore } from '../stores/workout';
 
 const router = useRouter();
 const workoutStore = useWorkoutStore();
 
 const showRestTimer = ref(false);
 const wakeLock = ref<WakeLockSentinel | null>(null);
+const restTimerRef = ref<InstanceType<typeof RestTimer> | null>(null);
 
 // Keyboard navigation handler
 function handleKeyDown(e: KeyboardEvent) {
@@ -95,7 +97,8 @@ const currentTime = computed(() => {
 
 const isCurrentExerciseComplete = computed(() => {
   if (!currentExercise.value) return false;
-  return workoutStore.isExerciseComplete(currentExercise.value.id);
+  // Check if the current exercise has completed the current set
+  return workoutStore.isCurrentSetCompleteForExercise(currentExercise.value.id);
 });
 
 const trackingType = computed(() => {
@@ -125,49 +128,81 @@ function handleCompleteSet() {
   const reps = trackingType.value === 'reps' ? currentReps.value : targetReps.value;
   const time = trackingType.value === 'time' ? currentTime.value : undefined;
   
-  // Store the current set number before completing
-  const setJustCompleted = exerciseProgress.value.currentSet;
+  // Store current state before completing the set
+  const currentExerciseIndex = workoutStore.activeWorkout!.currentExerciseIndex;
+  const currentSet = workoutStore.activeWorkout!.currentSet;
+  const isLastExercise = currentExerciseIndex === workoutStore.activeWorkout!.exercises.length - 1;
+  const isLastSet = currentSet >= targetSets.value;
   
   workoutStore.completeSet(weight, reps, time);
   
-  // For time-based exercises, the timer completion triggers this, so don't show rest timer
-  if (trackingType.value === 'time') {
-    // After time-based exercise completes, check if workout is complete
-    const updatedProgress = workoutStore.getCurrentExerciseProgress();
-    if (updatedProgress && updatedProgress.currentSet > targetSets.value) {
-      // Exercise complete, check if workout is complete
-      if (workoutStore.isWorkoutComplete()) {
-        handleWorkoutComplete();
-      } else {
-        workoutStore.nextExercise();
-      }
-    }
+  if (isLastExercise && isLastSet) {
+    // We just completed the last exercise of the last set - workout is complete
+    handleWorkoutComplete();
     return;
   }
   
-  // After completing, check if there are more sets for this exercise
-  // If we just completed set 3 of 3, then currentSet will now be 4
-  const updatedProgress = workoutStore.getCurrentExerciseProgress();
-  
-  if (updatedProgress && updatedProgress.currentSet <= targetSets.value) {
-    // More sets remaining, show rest timer
+  if (isLastExercise) {
+    // We just completed the last exercise of the current set
+    // Show rest timer after completing all exercises in the set
     showRestTimer.value = true;
   } else {
-    // Exercise complete (all sets done), check if workout is complete
-    if (workoutStore.isWorkoutComplete()) {
-      handleWorkoutComplete();
-    } else {
-      // Move to next exercise
-      workoutStore.nextExercise();
-      showRestTimer.value = false;
-    }
+    // Move to next exercise in the same set
+    workoutStore.nextExercise();
+    showRestTimer.value = false;
   }
 }
 
 function handleRestComplete() {
+  // User manually clicked to proceed after rest
   showRestTimer.value = false;
-  // Rest timer already completed, user can continue
+  // Move to next set (first exercise)
+  workoutStore.nextExercise();
 }
+
+async function handleRestBreak() {
+  // If rest timer is complete, proceed to next set
+  if (restTimerRef.value?.isComplete) {
+    handleRestComplete();
+    return;
+  }
+  
+  // Otherwise, start the rest timer when user clicks the button
+  // Wait for component to be fully mounted if needed
+  await nextTick();
+  
+  // Add a small delay to ensure the component is fully rendered
+  setTimeout(() => {
+    if (restTimerRef.value) {
+      try {
+        // Try to start the timer - start() will return early if already running
+        restTimerRef.value.start();
+      } catch (error) {
+        console.error('Error starting rest timer:', error);
+      }
+    } else {
+      console.warn('Rest timer ref not available');
+    }
+  }, 100);
+}
+
+const restDurationForExercise = computed(() => {
+  if (!currentExercise.value) return 90;
+  // Main lifts: compound movements that require longer rest
+  const mainLifts = [
+    'Squat',
+    'Deadlift',
+    'Bench Press',
+    'Overhead Press',
+    'Dumbbell Goblet Squat',
+    'Dumbbell Overhead Press',
+    'Dumbbell Romanian Deadlift',
+    'Dumbbell Bent-Over Row',
+  ];
+  const isMainLift = mainLifts.includes(currentExercise.value.name);
+  // Main lifts: 3 minutes (180s), Accessory: 90 seconds
+  return isMainLift ? 180 : 90;
+});
 
 function handleNextExercise() {
   workoutStore.nextExercise();
@@ -190,6 +225,39 @@ function handleCancelWorkout() {
     router.push('/');
   }
 }
+
+function getButtonLabel(): string {
+  if (!workoutStore.activeWorkout) return 'NEXT EXERCISE';
+  
+  // If rest timer is showing, check if it's complete
+  if (showRestTimer.value) {
+    if (restTimerRef.value?.isComplete) {
+      // Timer is complete - show "NEXT SET" or "COMPLETE WORKOUT"
+      const currentSet = workoutStore.activeWorkout.currentSet;
+      const isLastSet = currentSet >= targetSets.value;
+      return isLastSet ? 'COMPLETE WORKOUT' : 'NEXT SET';
+    }
+    // Timer not started or still running - show "REST BREAK"
+    return 'REST BREAK';
+  }
+  
+  const currentExerciseIndex = workoutStore.activeWorkout.currentExerciseIndex;
+  const currentSet = workoutStore.activeWorkout.currentSet;
+  const isLastExercise = currentExerciseIndex === workoutStore.activeWorkout.exercises.length - 1;
+  const isLastSet = currentSet >= targetSets.value;
+  
+  if (isLastExercise && isLastSet) {
+    return 'COMPLETE WORKOUT';
+  } else if (isLastExercise) {
+    return 'REST BREAK';
+  } else {
+    return 'NEXT EXERCISE';
+  }
+}
+
+const isRestTimerRunning = computed(() => {
+  return showRestTimer.value && restTimerRef.value?.isRunning;
+});
 
 // Show completion dialog when workout is complete
 const isWorkoutComplete = computed(() => workoutStore.isWorkoutComplete());
@@ -262,7 +330,16 @@ useSwipe(swipeContainer, {
 
         <div class="workout-view__card-container">
           <Transition name="exercise-card" mode="out-in">
+            <div v-if="showRestTimer" key="rest-timer" class="workout-view__rest-container">
+              <RestTimer
+                ref="restTimerRef"
+                :duration="restDurationForExercise"
+                :auto-start="true"
+                @complete="handleRestComplete"
+              />
+            </div>
             <ExerciseCard
+              v-else
               :key="currentExercise.id"
               :exercise="currentExercise"
               :target-weight="targetWeight"
@@ -273,28 +350,27 @@ useSwipe(swipeContainer, {
               :current-reps="currentReps"
               :current-time="currentTime"
               :unit="workoutStore.unit"
-              :show-rest-timer="showRestTimer && !isCurrentExerciseComplete && trackingType !== 'time'"
               :disabled="isCurrentExerciseComplete"
               @weight-change="handleWeightChange"
               @reps-change="handleRepsChange"
               @time-change="handleTimeChange"
               @complete-set="handleCompleteSet"
-              @rest-complete="handleRestComplete"
             />
           </Transition>
         </div>
 
         <div class="workout-view__sticky-footer">
           <BigButton
-            v-if="!isCurrentExerciseComplete"
-            label="COMPLETE SET"
+            v-if="!isWorkoutComplete"
+            :label="getButtonLabel()"
             variant="success"
             size="lg"
             full-width
-            @click="handleCompleteSet"
+            :disabled="isRestTimerRunning"
+            @click="showRestTimer ? handleRestBreak() : handleCompleteSet()"
           />
-          <div v-else class="workout-view__exercise-complete">
-            <p class="workout-view__complete-message">Exercise Complete! ✓</p>
+          <div v-else-if="isWorkoutComplete" class="workout-view__exercise-complete">
+            <p class="workout-view__complete-message">Workout Complete! ✓</p>
             <p class="workout-view__complete-hint">Swipe or use arrows to continue</p>
           </div>
         </div>
@@ -435,6 +511,16 @@ useSwipe(swipeContainer, {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.workout-view__rest-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  height: 100%;
 }
 
 .workout-view__sticky-footer {
