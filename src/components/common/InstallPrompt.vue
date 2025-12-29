@@ -10,6 +10,12 @@ interface BeforeInstallPromptEvent extends Event {
 const showPrompt = ref(false);
 const deferredPrompt = ref<BeforeInstallPromptEvent | null>(null);
 const isInstalled = ref(false);
+const isIOS = ref(false);
+
+// Detect iOS
+function detectIOS(): boolean {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+}
 
 function handleBeforeInstallPrompt(e: Event) {
   // Prevent the mini-infobar from appearing
@@ -20,6 +26,12 @@ function handleBeforeInstallPrompt(e: Event) {
 }
 
 async function handleInstallClick() {
+  if (isIOS.value) {
+    // For iOS, we just dismiss since user needs to follow manual instructions
+    handleDismiss();
+    return;
+  }
+
   if (!deferredPrompt.value) return;
 
   // Show the install prompt
@@ -61,8 +73,19 @@ onMounted(() => {
     }
   }
 
-  // Listen for the beforeinstallprompt event
-  window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  // Detect iOS
+  isIOS.value = detectIOS();
+
+  // For iOS, show prompt after a short delay
+  if (isIOS.value) {
+    // Show iOS prompt after 3 seconds
+    setTimeout(() => {
+      showPrompt.value = true;
+    }, 3000);
+  } else {
+    // Listen for the beforeinstallprompt event (Android/Chrome)
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }
 
   // Check if app is already installed
   window.addEventListener('appinstalled', () => {
@@ -88,11 +111,21 @@ onMounted(() => {
           </button>
         </div>
         <p class="install-prompt__message">
-          Install Hypertrophy on your device for a better experience. Works offline and loads faster!
+          <template v-if="isIOS">
+            Install Hypertrophy on your Home Screen for a better experience:
+            <ol class="install-prompt__ios-steps">
+              <li>Tap the <strong>Share</strong> button <span class="install-prompt__ios-icon">□↑</span> at the bottom</li>
+              <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+              <li>Tap <strong>"Add"</strong> to confirm</li>
+            </ol>
+          </template>
+          <template v-else>
+            Install Hypertrophy on your device for a better experience. Works offline and loads faster!
+          </template>
         </p>
         <div class="install-prompt__actions">
           <BigButton
-            label="Install"
+            :label="isIOS ? 'Got it' : 'Install'"
             variant="primary"
             size="md"
             full-width
@@ -174,6 +207,28 @@ onMounted(() => {
   color: var(--color-text-secondary);
   margin: 0 0 var(--spacing-lg) 0;
   line-height: var(--line-height-relaxed);
+}
+
+.install-prompt__ios-steps {
+  margin: var(--spacing-md) 0 0 0;
+  padding-left: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.install-prompt__ios-steps li {
+  line-height: var(--line-height-relaxed);
+}
+
+.install-prompt__ios-icon {
+  display: inline-block;
+  padding: 2px 6px;
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-sm);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: var(--font-size-sm);
+  margin: 0 2px;
 }
 
 .install-prompt__actions {

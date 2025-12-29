@@ -253,7 +253,7 @@ watch(
 </script>
 
 <template>
-  <AppLayout show-header header-title="Settings">
+  <AppLayout>
     <ScreenContainer>
       <div class="settings-view">
         <!-- Menu Button -->
@@ -288,27 +288,6 @@ watch(
 
         <!-- Exercise Settings - Horizontal Carousel -->
         <div v-if="selectedCategory === 'exercises'" class="settings-view__section settings-view__section--exercises">
-          <div class="settings-view__exercise-header-bar">
-            <button
-              class="settings-view__exercise-nav"
-              :disabled="currentExerciseIndex === 0"
-              @click="currentExerciseIndex--"
-              type="button"
-            >
-              ←
-            </button>
-            <div class="settings-view__exercise-counter">
-              {{ currentExerciseIndex + 1 }} / {{ exerciseSettings.length }}
-            </div>
-            <button
-              class="settings-view__exercise-nav"
-              :disabled="currentExerciseIndex === exerciseSettings.length - 1"
-              @click="currentExerciseIndex++"
-              type="button"
-            >
-              →
-            </button>
-          </div>
           <div ref="exerciseCarouselRef" class="settings-view__exercises-carousel">
             <Transition name="exercise-slide" mode="out-in">
               <div
@@ -359,6 +338,27 @@ watch(
                 </div>
               </div>
             </Transition>
+          </div>
+          <div class="settings-view__exercise-footer-bar">
+            <button
+              class="settings-view__exercise-nav"
+              :disabled="currentExerciseIndex === 0"
+              @click="currentExerciseIndex--"
+              type="button"
+            >
+              ←
+            </button>
+            <div class="settings-view__exercise-counter">
+              {{ currentExerciseIndex + 1 }} / {{ exerciseSettings.length }}
+            </div>
+            <button
+              class="settings-view__exercise-nav"
+              :disabled="currentExerciseIndex === exerciseSettings.length - 1"
+              @click="currentExerciseIndex++"
+              type="button"
+            >
+              →
+            </button>
           </div>
         </div>
 
@@ -567,7 +567,7 @@ watch(
   border-color: var(--color-accent);
 }
 
-.settings-view__exercise-header-bar {
+.settings-view__exercise-footer-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -810,7 +810,7 @@ watch(
 .settings-view__exercise-control {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-xs);
 }
 
 .settings-view__control-label {
