@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch, nextTick } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import type { Exercise } from '../../types/workout';
-import WeightAdjuster from '../common/WeightAdjuster.vue';
-import RepsAdjuster from '../common/RepsAdjuster.vue';
-import ExerciseTimer from '../common/ExerciseTimer.vue';
-import SetCounter from './SetCounter.vue';
-import RestTimer from '../common/RestTimer.vue';
 import BigButton from '../common/BigButton.vue';
+import ExerciseTimer from '../common/ExerciseTimer.vue';
+import RepsAdjuster from '../common/RepsAdjuster.vue';
+import RestTimer from '../common/RestTimer.vue';
+import WeightAdjuster from '../common/WeightAdjuster.vue';
+import SetCounter from './SetCounter.vue';
 
 interface Props {
   exercise: Exercise;
@@ -210,25 +210,30 @@ watch(
 .exercise-card {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-sm);
   width: 100%;
   max-width: 500px;
   margin: 0 auto;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .exercise-card__header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-lg);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
   background-color: var(--color-bg-secondary);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
 
 .exercise-card__name {
-  font-size: var(--font-size-3xl);
+  font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-extrabold);
   color: var(--color-accent);
   text-align: center;
@@ -240,7 +245,7 @@ watch(
 
 .exercise-card__targets {
   display: flex;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-md);
   width: 100%;
   justify-content: center;
 }
@@ -261,7 +266,7 @@ watch(
 }
 
 .exercise-card__target-value {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
 }
@@ -269,18 +274,18 @@ watch(
 .exercise-card__weight-section {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 .exercise-card__current-weight {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 .exercise-card__current-label {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
   text-transform: uppercase;
@@ -333,14 +338,14 @@ watch(
 .exercise-card__reps-section {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 .exercise-card__current-reps {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 .exercise-card__reps-hint {
@@ -361,15 +366,16 @@ watch(
 
 .exercise-card__actions {
   width: 100%;
-  padding-top: var(--spacing-md);
+  padding-top: var(--spacing-xs);
+  flex-shrink: 0;
 }
 
 .exercise-card__complete {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-lg);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
   background-color: var(--color-success);
   border-radius: var(--radius-lg);
   opacity: 0.9;

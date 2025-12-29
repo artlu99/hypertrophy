@@ -93,9 +93,10 @@ function handleViewSettings() {
   width: 100%;
   max-width: 500px;
   margin: 0 auto;
-  padding: var(--spacing-sm) var(--spacing-md) var(--spacing-lg);
-  min-height: 100vh;
-  min-height: 100dvh;
+  padding: var(--spacing-sm) var(--spacing-md) 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 /* Top section with two rows */
@@ -176,6 +177,8 @@ function handleViewSettings() {
   width: 100%;
   flex: 1;
   margin-bottom: var(--spacing-xs);
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Bottom section with full-width buttons */
@@ -185,7 +188,12 @@ function handleViewSettings() {
   gap: var(--spacing-md);
   width: 100%;
   margin-top: auto;
-  padding-top: var(--spacing-sm);
+  padding: var(--spacing-sm) 0 var(--spacing-md);
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(to top, var(--color-bg-primary) 80%, transparent);
+  z-index: 10;
 }
 
 .dashboard__start {

@@ -18,12 +18,13 @@ withDefaults(defineProps<Props>(), {
 
 <style scoped>
 .screen-container {
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   width: 100%;
   display: flex;
   flex-direction: column;
   padding: var(--spacing-md);
+  overflow: hidden;
 }
 
 .screen-container--center {

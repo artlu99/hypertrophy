@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useSwipe } from '../composables/useSwipe';
 import { useWorkoutStore } from '../stores/workout';
 import AppLayout from '../components/layout/AppLayout.vue';
 import ScreenContainer from '../components/layout/ScreenContainer.vue';
@@ -192,6 +193,23 @@ function handleCancelWorkout() {
 
 // Show completion dialog when workout is complete
 const isWorkoutComplete = computed(() => workoutStore.isWorkoutComplete());
+
+// Swipe functionality
+const swipeContainer = ref<HTMLElement | null>(null);
+useSwipe(swipeContainer, {
+  onSwipeLeft: () => {
+    if (workoutStore.canGoNext) {
+      handleNextExercise();
+    }
+  },
+  onSwipeRight: () => {
+    if (workoutStore.canGoPrevious) {
+      handlePreviousExercise();
+    }
+  },
+  threshold: 50,
+  velocity: 0.3,
+});
 </script>
 
 <template>
@@ -216,7 +234,7 @@ const isWorkoutComplete = computed(() => workoutStore.isWorkoutComplete());
         </div>
       </div>
 
-      <div v-else-if="currentExercise && exerciseProgress" class="workout-view__active">
+      <div v-else-if="currentExercise && exerciseProgress" ref="swipeContainer" class="workout-view__active">
         <div class="workout-view__header">
           <button
             class="workout-view__nav-button"
@@ -242,27 +260,29 @@ const isWorkoutComplete = computed(() => workoutStore.isWorkoutComplete());
           </button>
         </div>
 
-        <Transition name="exercise-card" mode="out-in">
-          <ExerciseCard
-            :key="currentExercise.id"
-            :exercise="currentExercise"
-            :target-weight="targetWeight"
-            :target-reps="targetReps"
-            :target-sets="targetSets"
-            :current-set="exerciseProgress.currentSet"
-            :current-weight="currentWeight"
-            :current-reps="currentReps"
-            :current-time="currentTime"
-            :unit="workoutStore.unit"
-            :show-rest-timer="showRestTimer && !isCurrentExerciseComplete && trackingType !== 'time'"
-            :disabled="isCurrentExerciseComplete"
-            @weight-change="handleWeightChange"
-            @reps-change="handleRepsChange"
-            @time-change="handleTimeChange"
-            @complete-set="handleCompleteSet"
-            @rest-complete="handleRestComplete"
-          />
-        </Transition>
+        <div class="workout-view__card-container">
+          <Transition name="exercise-card" mode="out-in">
+            <ExerciseCard
+              :key="currentExercise.id"
+              :exercise="currentExercise"
+              :target-weight="targetWeight"
+              :target-reps="targetReps"
+              :target-sets="targetSets"
+              :current-set="exerciseProgress.currentSet"
+              :current-weight="currentWeight"
+              :current-reps="currentReps"
+              :current-time="currentTime"
+              :unit="workoutStore.unit"
+              :show-rest-timer="showRestTimer && !isCurrentExerciseComplete && trackingType !== 'time'"
+              :disabled="isCurrentExerciseComplete"
+              @weight-change="handleWeightChange"
+              @reps-change="handleRepsChange"
+              @time-change="handleTimeChange"
+              @complete-set="handleCompleteSet"
+              @rest-complete="handleRestComplete"
+            />
+          </Transition>
+        </div>
 
         <div class="workout-view__footer">
           <BigButton
@@ -314,23 +334,27 @@ const isWorkoutComplete = computed(() => workoutStore.isWorkoutComplete());
 .workout-view__active {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
-  padding-bottom: var(--spacing-xl);
+  gap: var(--spacing-md);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: pan-y;
 }
 
 .workout-view__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   background-color: var(--color-bg-secondary);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
 
 .workout-view__nav-button {
-  min-width: 48px;
-  min-height: 48px;
+  min-width: 40px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -338,7 +362,7 @@ const isWorkoutComplete = computed(() => workoutStore.isWorkoutComplete());
   border: 2px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   cursor: pointer;
   transition: all var(--transition-base);
@@ -362,17 +386,26 @@ const isWorkoutComplete = computed(() => workoutStore.isWorkoutComplete());
 }
 
 .workout-view__exercise-counter {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
+.workout-view__card-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .workout-view__footer {
   display: flex;
   justify-content: center;
-  padding-top: var(--spacing-md);
+  padding-top: var(--spacing-sm);
+  flex-shrink: 0;
 }
 
 .exercise-card-enter-active,

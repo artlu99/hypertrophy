@@ -1,15 +1,27 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import { useSwipe } from "../composables/useSwipe";
 import BigButton from "../components/common/BigButton.vue";
 import RepsAdjuster from "../components/common/RepsAdjuster.vue";
 import WeightAdjuster from "../components/common/WeightAdjuster.vue";
 import AppLayout from "../components/layout/AppLayout.vue";
 import ScreenContainer from "../components/layout/ScreenContainer.vue";
+import SlideDrawer from "../components/common/SlideDrawer.vue";
 import { useWorkoutStore } from "../stores/workout";
 
 const router = useRouter();
 const workoutStore = useWorkoutStore();
+
+// Drawer state
+const drawerOpen = ref(false);
+const selectedCategory = ref<'exercises' | 'unit' | 'backup' | 'program'>('exercises');
+
+// Exercise carousel state
+const currentExerciseIndex = ref(0);
+const exerciseCarouselRef = ref<HTMLElement | null>(null);
+
+const currentExercise = computed(() => exerciseSettings.value[currentExerciseIndex.value]);
 
 const unit = ref(workoutStore.unit);
 const exerciseSettings = ref(
@@ -200,6 +212,27 @@ function handleImport(json: string) {
   }
 }
 
+// Swipe functionality for exercise carousel
+useSwipe(exerciseCarouselRef, {
+  onSwipeLeft: () => {
+    if (currentExerciseIndex.value < exerciseSettings.value.length - 1) {
+      currentExerciseIndex.value++;
+    }
+  },
+  onSwipeRight: () => {
+    if (currentExerciseIndex.value > 0) {
+      currentExerciseIndex.value--;
+    }
+  },
+  threshold: 50,
+  velocity: 0.3,
+});
+
+function selectCategory(category: 'exercises' | 'unit' | 'backup' | 'program') {
+  selectedCategory.value = category;
+  drawerOpen.value = false;
+}
+
 // Reset local state if user navigates away without saving
 watch(
   () => router.currentRoute.value.path,
@@ -223,7 +256,19 @@ watch(
   <AppLayout show-header header-title="Settings">
     <ScreenContainer>
       <div class="settings-view">
-        <div class="settings-view__section">
+        <!-- Menu Button -->
+        <div class="settings-view__menu">
+          <BigButton
+            label="☰ Menu"
+            variant="secondary"
+            size="md"
+            full-width
+            @click="drawerOpen = true"
+          />
+        </div>
+
+        <!-- Unit Preference -->
+        <div v-if="selectedCategory === 'unit'" class="settings-view__section">
           <h2 class="settings-view__section-title">Unit Preference</h2>
           <div class="settings-view__unit-toggle">
             <button :class="[
@@ -241,60 +286,84 @@ watch(
           </div>
         </div>
 
-        <div class="settings-view__section">
-          <h2 class="settings-view__section-title">Exercise Settings</h2>
-          <p class="settings-view__section-description">
-            Set your starting values for each exercise. These will be used as the base for
-            progression calculations.
-          </p>
-          <div class="settings-view__exercises">
-            <div v-for="exercise in exerciseSettings" :key="exercise.id" class="settings-view__exercise">
-              <div class="settings-view__exercise-header">
-                <h3 class="settings-view__exercise-name">{{ exercise.name }}</h3>
-                <span class="settings-view__exercise-day">
-                  {{workoutStore.exercises.find((e) => e.id === exercise.id)?.workoutDay}}
-                </span>
-              </div>
-
-              <!-- Weight-based exercises -->
-              <div v-if="exercise.trackingType === 'weight'" class="settings-view__exercise-control">
-                <label class="settings-view__control-label">Starting Weight</label>
-                <WeightAdjuster :value="exercise.baseWeight" :unit="unit" :min="0" :max="1000"
-                  :step="unit === 'kg' ? 2.5 : 5" @update:value="(weight) => handleWeightChange(exercise.id, weight)" />
-              </div>
-
-              <!-- Reps-based exercises -->
-              <div v-else-if="exercise.trackingType === 'reps'" class="settings-view__exercise-control">
-                <label class="settings-view__control-label">Starting Reps</label>
-                <RepsAdjuster :value="exercise.baseReps || 10" :min="1" :max="200" :step="1"
-                  @update:value="(reps) => handleRepsChange(exercise.id, reps)" />
-              </div>
-
-              <!-- Time-based exercises -->
-              <div v-else-if="exercise.trackingType === 'time'" class="settings-view__exercise-control">
-                <label class="settings-view__control-label">Starting Time (seconds)</label>
-                <div class="settings-view__time-control">
-                  <button class="settings-view__time-button"
-                    @click="handleTimeChange(exercise.id, (exercise.baseTime || 30) - 5)"
-                    :disabled="(exercise.baseTime || 30) <= 5">
-                    −5s
-                  </button>
-                  <span class="settings-view__time-display">
-                    {{ Math.floor((exercise.baseTime || 30) / 60) }}:{{ ((exercise.baseTime || 30) %
-                      60).toString().padStart(2, '0') }}
+        <!-- Exercise Settings - Horizontal Carousel -->
+        <div v-if="selectedCategory === 'exercises'" class="settings-view__section settings-view__section--exercises">
+          <div class="settings-view__exercise-header-bar">
+            <button
+              class="settings-view__exercise-nav"
+              :disabled="currentExerciseIndex === 0"
+              @click="currentExerciseIndex--"
+              type="button"
+            >
+              ←
+            </button>
+            <div class="settings-view__exercise-counter">
+              {{ currentExerciseIndex + 1 }} / {{ exerciseSettings.length }}
+            </div>
+            <button
+              class="settings-view__exercise-nav"
+              :disabled="currentExerciseIndex === exerciseSettings.length - 1"
+              @click="currentExerciseIndex++"
+              type="button"
+            >
+              →
+            </button>
+          </div>
+          <div ref="exerciseCarouselRef" class="settings-view__exercises-carousel">
+            <Transition name="exercise-slide" mode="out-in">
+              <div
+                v-if="currentExercise"
+                :key="currentExercise.id"
+                class="settings-view__exercise"
+              >
+                <div class="settings-view__exercise-header">
+                  <h3 class="settings-view__exercise-name">{{ currentExercise?.name }}</h3>
+                  <span class="settings-view__exercise-day">
+                    {{workoutStore.exercises.find((e) => e.id === currentExercise?.id)?.workoutDay}}
                   </span>
-                  <button class="settings-view__time-button"
-                    @click="handleTimeChange(exercise.id, (exercise.baseTime || 30) + 5)"
-                    :disabled="(exercise.baseTime || 30) >= 600">
-                    +5s
-                  </button>
+                </div>
+
+                <!-- Weight-based exercises -->
+                <div v-if="currentExercise?.trackingType === 'weight'" class="settings-view__exercise-control">
+                  <label class="settings-view__control-label">Starting Weight</label>
+                  <WeightAdjuster :value="currentExercise?.baseWeight" :unit="unit" :min="0" :max="1000"
+                    :step="unit === 'kg' ? 2.5 : 5" @update:value="(weight) => currentExercise && handleWeightChange(currentExercise.id, weight)" />
+                </div>
+
+                <!-- Reps-based exercises -->
+                <div v-else-if="currentExercise?.trackingType === 'reps'" class="settings-view__exercise-control">
+                  <label class="settings-view__control-label">Starting Reps</label>
+                  <RepsAdjuster :value="currentExercise?.baseReps || 10" :min="1" :max="200" :step="1"
+                    @update:value="(reps) => currentExercise && handleRepsChange(currentExercise.id, reps)" />
+                </div>
+
+                <!-- Time-based exercises -->
+                <div v-else-if="currentExercise?.trackingType === 'time'" class="settings-view__exercise-control">
+                  <label class="settings-view__control-label">Starting Time (seconds)</label>
+                  <div class="settings-view__time-control">
+                    <button class="settings-view__time-button"
+                      @click="currentExercise && handleTimeChange(currentExercise.id, (currentExercise.baseTime || 30) - 5)"
+                      :disabled="(currentExercise?.baseTime || 30) <= 5">
+                      −5s
+                    </button>
+                    <span class="settings-view__time-display">
+                      {{ Math.floor((currentExercise?.baseTime || 30) / 60) }}:{{ ((currentExercise?.baseTime || 30) %
+                        60).toString().padStart(2, '0') }}
+                    </span>
+                    <button class="settings-view__time-button"
+                      @click="currentExercise && handleTimeChange(currentExercise.id, (currentExercise.baseTime || 30) + 5)"
+                      :disabled="(currentExercise?.baseTime || 30) >= 600">
+                      +5s
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            </Transition>
           </div>
         </div>
 
-        <div class="settings-view__section">
+        <!-- Backup & Restore -->
+        <div v-if="selectedCategory === 'backup'" class="settings-view__section">
           <h2 class="settings-view__section-title">Data Backup & Restore</h2>
           <p class="settings-view__section-description">
             Export your workout data as JSON to save on your phone, or import previously exported data.
@@ -339,7 +408,8 @@ watch(
           </div>
         </div>
 
-        <div class="settings-view__section">
+        <!-- Program Management -->
+        <div v-if="selectedCategory === 'program'" class="settings-view__section">
           <h2 class="settings-view__section-title">Program Management</h2>
           <div class="settings-view__program-info">
             <div class="settings-view__program-stat">
@@ -367,6 +437,43 @@ watch(
           <BigButton label="Cancel" variant="secondary" size="md" full-width @click="handleCancel" />
         </div>
       </div>
+
+      <!-- Drawer -->
+      <SlideDrawer v-model="drawerOpen" side="left">
+        <div class="settings-view__drawer-content">
+          <h2 class="settings-view__drawer-title">Settings</h2>
+          <div class="settings-view__drawer-menu">
+            <button
+              :class="['settings-view__drawer-item', { 'settings-view__drawer-item--active': selectedCategory === 'exercises' }]"
+              @click="selectCategory('exercises')"
+              type="button"
+            >
+              💪 Exercises
+            </button>
+            <button
+              :class="['settings-view__drawer-item', { 'settings-view__drawer-item--active': selectedCategory === 'unit' }]"
+              @click="selectCategory('unit')"
+              type="button"
+            >
+              ⚖️ Unit Preference
+            </button>
+            <button
+              :class="['settings-view__drawer-item', { 'settings-view__drawer-item--active': selectedCategory === 'backup' }]"
+              @click="selectCategory('backup')"
+              type="button"
+            >
+              💾 Backup & Restore
+            </button>
+            <button
+              :class="['settings-view__drawer-item', { 'settings-view__drawer-item--active': selectedCategory === 'program' }]"
+              @click="selectCategory('program')"
+              type="button"
+            >
+              🔄 Program Management
+            </button>
+          </div>
+        </div>
+      </SlideDrawer>
     </ScreenContainer>
   </AppLayout>
 </template>
@@ -375,35 +482,55 @@ watch(
 .settings-view {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2xl);
+  gap: var(--spacing-md);
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
-  padding-bottom: var(--spacing-xl);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.settings-view__menu {
+  flex-shrink: 0;
 }
 
 .settings-view__section {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-lg);
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
   background-color: var(--color-bg-secondary);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.settings-view__section--exercises {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  overflow: hidden;
 }
 
 .settings-view__section-title {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   margin: 0;
+  flex-shrink: 0;
 }
 
 .settings-view__section-description {
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin: 0;
   line-height: var(--line-height-relaxed);
+  flex-shrink: 0;
 }
 
 .settings-view__unit-toggle {
@@ -440,20 +567,78 @@ watch(
   border-color: var(--color-accent);
 }
 
+.settings-view__exercise-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.settings-view__exercise-nav {
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg-primary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.settings-view__exercise-nav:not(:disabled):hover {
+  background-color: var(--color-bg-secondary);
+  border-color: var(--color-accent);
+}
+
+.settings-view__exercise-nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.settings-view__exercise-counter {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+.settings-view__exercises-carousel {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
 .settings-view__exercises {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-md);
+  height: 100%;
 }
 
 .settings-view__exercise {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
-  padding: var(--spacing-lg);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
   background-color: var(--color-bg-primary);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
+  height: 100%;
+  position: absolute;
+  width: 100%;
+  top: 0;
+  left: 0;
 }
 
 .settings-view__exercise-header {
@@ -463,7 +648,7 @@ watch(
 }
 
 .settings-view__exercise-name {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   margin: 0;
@@ -720,9 +905,74 @@ watch(
 .settings-view__actions {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
-  padding-top: var(--spacing-lg);
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-md);
   border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.settings-view__drawer-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+}
+
+.settings-view__drawer-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.settings-view__drawer-menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.settings-view__drawer-item {
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: left;
+  background-color: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.settings-view__drawer-item:hover {
+  background-color: var(--color-bg-tertiary);
+  border-color: var(--color-accent);
+}
+
+.settings-view__drawer-item--active {
+  background-color: var(--color-accent);
+  color: var(--color-bg-primary);
+  border-color: var(--color-accent);
+}
+
+.exercise-slide-enter-active,
+.exercise-slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.exercise-slide-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.exercise-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
 }
 
 @media (min-width: 768px) {

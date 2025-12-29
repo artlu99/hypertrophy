@@ -97,9 +97,10 @@ withDefaults(defineProps<Props>(), {
 
 .app-layout__main {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .app-layout__footer {
