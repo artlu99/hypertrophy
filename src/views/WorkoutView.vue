@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import BigButton from '../components/common/BigButton.vue';
-import RestTimer from '../components/common/RestTimer.vue';
-import AppLayout from '../components/layout/AppLayout.vue';
-import ScreenContainer from '../components/layout/ScreenContainer.vue';
-import ExerciseCard from '../components/workout/ExerciseCard.vue';
-import { useSwipe } from '../composables/useSwipe';
-import { useWorkoutStore } from '../stores/workout';
+import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import BigButton from "../components/common/BigButton.vue";
+import type RestTimer from "../components/common/RestTimer.vue";
+import AppLayout from "../components/layout/AppLayout.vue";
+import ScreenContainer from "../components/layout/ScreenContainer.vue";
+import ExerciseCard from "../components/workout/ExerciseCard.vue";
+import { useSwipe } from "../composables/useSwipe";
+import { useWorkoutStore } from "../stores/workout";
 
 const router = useRouter();
 const workoutStore = useWorkoutStore();
@@ -18,245 +18,242 @@ const restTimerRef = ref<InstanceType<typeof RestTimer> | null>(null);
 
 // Keyboard navigation handler
 function handleKeyDown(e: KeyboardEvent) {
-  if (e.key === 'ArrowLeft' && workoutStore.canGoPrevious) {
-    e.preventDefault();
-    handlePreviousExercise();
-  } else if (e.key === 'ArrowRight' && workoutStore.canGoNext) {
-    e.preventDefault();
-    handleNextExercise();
-  }
+	if (e.key === "ArrowLeft" && workoutStore.canGoPrevious) {
+		e.preventDefault();
+		handlePreviousExercise();
+	} else if (e.key === "ArrowRight" && workoutStore.canGoNext) {
+		e.preventDefault();
+		handleNextExercise();
+	}
 }
 
 // Initialize workout when component mounts
 onMounted(() => {
-  if (!workoutStore.isWorkoutActive) {
-    try {
-      workoutStore.startWorkout();
-      if (!workoutStore.isWorkoutActive) {
-        // Failed to start workout, redirect to dashboard
-        router.push('/');
-      }
-    } catch (error) {
-      console.error('Failed to start workout:', error);
-      router.push('/');
-    }
-  }
-  
-  // Request wake lock to keep screen on during workout
-  if ('wakeLock' in navigator) {
-    navigator.wakeLock
-      .request('screen')
-      .then((lock) => {
-        wakeLock.value = lock;
-      })
-      .catch((error) => {
-        // Wake lock request failed, continue anyway
-        console.warn('Wake lock request failed:', error);
-      });
-  }
-  
-  // Add keyboard navigation support
-  window.addEventListener('keydown', handleKeyDown);
+	if (!workoutStore.isWorkoutActive) {
+		try {
+			workoutStore.startWorkout();
+			if (!workoutStore.isWorkoutActive) {
+				// Failed to start workout, redirect to dashboard
+				router.push("/");
+			}
+		} catch (error) {
+			console.error("Failed to start workout:", error);
+			router.push("/");
+		}
+	}
+
+	// Request wake lock to keep screen on during workout
+	if ("wakeLock" in navigator) {
+		navigator.wakeLock
+			.request("screen")
+			.then((lock) => {
+				wakeLock.value = lock;
+			})
+			.catch((error) => {
+				// Wake lock request failed, continue anyway
+				console.warn("Wake lock request failed:", error);
+			});
+	}
+
+	// Add keyboard navigation support
+	window.addEventListener("keydown", handleKeyDown);
 });
 
 // Cleanup when component unmounts
 onUnmounted(() => {
-  // Release wake lock
-  if (wakeLock.value) {
-    wakeLock.value.release().catch(() => {
-      // Ignore errors
-    });
-  }
-  
-  // Remove keyboard listener
-  window.removeEventListener('keydown', handleKeyDown);
+	// Release wake lock
+	if (wakeLock.value) {
+		wakeLock.value.release().catch(() => {
+			// Ignore errors
+		});
+	}
+
+	// Remove keyboard listener
+	window.removeEventListener("keydown", handleKeyDown);
 });
 
 const currentExercise = computed(() => workoutStore.getCurrentExercise());
-const exerciseProgress = computed(() => workoutStore.getCurrentExerciseProgress());
+const exerciseProgress = computed(() =>
+	workoutStore.getCurrentExerciseProgress(),
+);
 const targetWeight = computed(() => {
-  if (!currentExercise.value) return 0;
-  return workoutStore.getTargetWeightForExercise(currentExercise.value.id);
+	if (!currentExercise.value) return 0;
+	return workoutStore.getTargetWeightForExercise(currentExercise.value.id);
 });
 const targetReps = computed(() => workoutStore.getTargetRepsForWeek());
 const targetSets = computed(() => workoutStore.getTargetSetsForWeek());
 const currentWeight = computed(() => {
-  if (!currentExercise.value) return 0;
-  return currentExercise.value.currentWeight;
+	if (!currentExercise.value) return 0;
+	return currentExercise.value.currentWeight;
 });
 
 const currentReps = computed(() => {
-  if (!currentExercise.value) return 0;
-  return workoutStore.getCurrentReps(currentExercise.value.id);
+	if (!currentExercise.value) return 0;
+	return workoutStore.getCurrentReps(currentExercise.value.id);
 });
 
 const currentTime = computed(() => {
-  if (!currentExercise.value) return 30;
-  return workoutStore.getCurrentTime(currentExercise.value.id);
+	if (!currentExercise.value) return 30;
+	return workoutStore.getCurrentTime(currentExercise.value.id);
 });
 
 const isCurrentExerciseComplete = computed(() => {
-  if (!currentExercise.value) return false;
-  // Check if the current exercise has completed the current set
-  return workoutStore.isCurrentSetCompleteForExercise(currentExercise.value.id);
+	if (!currentExercise.value) return false;
+	// Check if the current exercise has completed the current set
+	return workoutStore.isCurrentSetCompleteForExercise(currentExercise.value.id);
 });
 
 const trackingType = computed(() => {
-  if (!currentExercise.value) return 'weight';
-  return currentExercise.value.trackingType || 'weight';
+	if (!currentExercise.value) return "weight";
+	return currentExercise.value.trackingType || "weight";
 });
 
 function handleWeightChange(weight: number) {
-  if (!currentExercise.value) return;
-  workoutStore.updateActiveWorkoutWeight(currentExercise.value.id, weight);
+	if (!currentExercise.value) return;
+	workoutStore.updateActiveWorkoutWeight(currentExercise.value.id, weight);
 }
 
 function handleRepsChange(reps: number) {
-  if (!currentExercise.value) return;
-  workoutStore.updateActiveWorkoutReps(currentExercise.value.id, reps);
+	if (!currentExercise.value) return;
+	workoutStore.updateActiveWorkoutReps(currentExercise.value.id, reps);
 }
 
 function handleTimeChange(time: number) {
-  if (!currentExercise.value) return;
-  workoutStore.updateActiveWorkoutTime(currentExercise.value.id, time);
+	if (!currentExercise.value) return;
+	workoutStore.updateActiveWorkoutTime(currentExercise.value.id, time);
 }
 
 function handleCompleteSet() {
-  if (!currentExercise.value || !exerciseProgress.value) return;
-  
-  const weight = currentWeight.value;
-  const reps = trackingType.value === 'reps' ? currentReps.value : targetReps.value;
-  const time = trackingType.value === 'time' ? currentTime.value : undefined;
-  
-  // Store current state before completing the set
-  const currentExerciseIndex = workoutStore.activeWorkout!.currentExerciseIndex;
-  const currentSet = workoutStore.activeWorkout!.currentSet;
-  const isLastExercise = currentExerciseIndex === workoutStore.activeWorkout!.exercises.length - 1;
-  const isLastSet = currentSet >= targetSets.value;
-  
-  workoutStore.completeSet(weight, reps, time);
-  
-  if (isLastExercise && isLastSet) {
-    // We just completed the last exercise of the last set - workout is complete
-    handleWorkoutComplete();
-    return;
-  }
-  
-  if (isLastExercise) {
-    // We just completed the last exercise of the current set
-    // Show rest timer after completing all exercises in the set
-    showRestTimer.value = true;
-  } else {
-    // Move to next exercise in the same set
-    workoutStore.nextExercise();
-    showRestTimer.value = false;
-  }
+	if (!currentExercise.value || !exerciseProgress.value) return;
+
+	const weight = currentWeight.value;
+	const reps =
+		trackingType.value === "reps" ? currentReps.value : targetReps.value;
+	const time = trackingType.value === "time" ? currentTime.value : undefined;
+
+	// Store current state before completing the set
+	const currentExerciseIndex = workoutStore.activeWorkout!.currentExerciseIndex;
+	const currentSet = workoutStore.activeWorkout!.currentSet;
+	const isLastExercise =
+		currentExerciseIndex === workoutStore.activeWorkout!.exercises.length - 1;
+	const isLastSet = currentSet >= targetSets.value;
+
+	workoutStore.completeSet(weight, reps, time);
+
+	workoutStore.nextExercise();
+	showRestTimer.value = false;
+}
 }
 
 function handleRestComplete() {
-  // User manually clicked to proceed after rest
-  showRestTimer.value = false;
-  // Move to next set (first exercise)
-  workoutStore.nextExercise();
+	// User manually clicked to proceed after rest
+	showRestTimer.value = false;
+	// Move to next set (first exercise)
+	workoutStore.nextExercise();
 }
 
 async function handleRestBreak() {
-  // If rest timer is complete, proceed to next set
-  if (restTimerRef.value?.isComplete) {
-    handleRestComplete();
-    return;
-  }
-  
-  // Otherwise, start the rest timer when user clicks the button
-  // Wait for component to be fully mounted if needed
-  await nextTick();
-  
-  // Add a small delay to ensure the component is fully rendered
-  setTimeout(() => {
-    if (restTimerRef.value) {
-      try {
-        // Try to start the timer - start() will return early if already running
-        restTimerRef.value.start();
-      } catch (error) {
-        console.error('Error starting rest timer:', error);
-      }
-    } else {
-      console.warn('Rest timer ref not available');
-    }
-  }, 100);
+	// If rest timer is complete, proceed to next set
+	if (restTimerRef.value?.isComplete) {
+		handleRestComplete();
+		return;
+	}
+
+	// Otherwise, start the rest timer when user clicks the button
+	// Wait for component to be fully mounted if needed
+	await nextTick();
+
+	// Add a small delay to ensure the component is fully rendered
+	setTimeout(() => {
+		if (restTimerRef.value) {
+			try {
+				// Try to start the timer - start() will return early if already running
+				restTimerRef.value.start();
+			} catch (error) {
+				console.error("Error starting rest timer:", error);
+			}
+		} else {
+			console.warn("Rest timer ref not available");
+		}
+	}, 100);
 }
 
 const restDurationForExercise = computed(() => {
-  if (!currentExercise.value) return 90;
-  // Main lifts: compound movements that require longer rest
-  const mainLifts = [
-    'Squat',
-    'Deadlift',
-    'Bench Press',
-    'Overhead Press',
-    'Dumbbell Goblet Squat',
-    'Dumbbell Overhead Press',
-    'Dumbbell Romanian Deadlift',
-    'Dumbbell Bent-Over Row',
-  ];
-  const isMainLift = mainLifts.includes(currentExercise.value.name);
-  // Main lifts: 3 minutes (180s), Accessory: 90 seconds
-  return isMainLift ? 180 : 90;
+	if (!currentExercise.value) return 90;
+	// Main lifts: compound movements that require longer rest
+	const mainLifts = [
+		"Squat",
+		"Deadlift",
+		"Bench Press",
+		"Overhead Press",
+		"Dumbbell Goblet Squat",
+		"Dumbbell Overhead Press",
+		"Dumbbell Romanian Deadlift",
+		"Dumbbell Bent-Over Row",
+	];
+	const isMainLift = mainLifts.includes(currentExercise.value.name);
+	// Main lifts: 3 minutes (180s), Accessory: 90 seconds
+	return isMainLift ? 180 : 90;
 });
 
 function handleNextExercise() {
-  workoutStore.nextExercise();
-  showRestTimer.value = false;
+	workoutStore.nextExercise();
+	showRestTimer.value = false;
 }
 
 function handlePreviousExercise() {
-  workoutStore.previousExercise();
-  showRestTimer.value = false;
+	workoutStore.previousExercise();
+	showRestTimer.value = false;
 }
 
 function handleWorkoutComplete() {
-  workoutStore.finishWorkout();
-  router.push('/');
+	workoutStore.finishWorkout();
+	router.push("/");
 }
 
 function handleCancelWorkout() {
-  if (confirm('Are you sure you want to cancel this workout? Progress will be lost.')) {
-    workoutStore.cancelWorkout();
-    router.push('/');
-  }
+	if (
+		confirm(
+			"Are you sure you want to cancel this workout? Progress will be lost.",
+		)
+	) {
+		workoutStore.cancelWorkout();
+		router.push("/");
+	}
 }
 
 function getButtonLabel(): string {
-  if (!workoutStore.activeWorkout) return 'NEXT EXERCISE';
-  
-  // If rest timer is showing, check if it's complete
-  if (showRestTimer.value) {
-    if (restTimerRef.value?.isComplete) {
-      // Timer is complete - show "NEXT SET" or "COMPLETE WORKOUT"
-      const currentSet = workoutStore.activeWorkout.currentSet;
-      const isLastSet = currentSet >= targetSets.value;
-      return isLastSet ? 'COMPLETE WORKOUT' : 'NEXT SET';
-    }
-    // Timer not started or still running - show "REST BREAK"
-    return 'REST BREAK';
-  }
-  
-  const currentExerciseIndex = workoutStore.activeWorkout.currentExerciseIndex;
-  const currentSet = workoutStore.activeWorkout.currentSet;
-  const isLastExercise = currentExerciseIndex === workoutStore.activeWorkout.exercises.length - 1;
-  const isLastSet = currentSet >= targetSets.value;
-  
-  if (isLastExercise && isLastSet) {
-    return 'COMPLETE WORKOUT';
-  } else if (isLastExercise) {
-    return 'REST BREAK';
-  } else {
-    return 'NEXT EXERCISE';
-  }
+	if (!workoutStore.activeWorkout) return "NEXT EXERCISE";
+
+	// If rest timer is showing, check if it's complete
+	if (showRestTimer.value) {
+		if (restTimerRef.value?.isComplete) {
+			// Timer is complete - show "NEXT SET" or "COMPLETE WORKOUT"
+			const currentSet = workoutStore.activeWorkout.currentSet;
+			const isLastSet = currentSet >= targetSets.value;
+			return isLastSet ? "COMPLETE WORKOUT" : "NEXT SET";
+		}
+		// Timer not started or still running - show "REST BREAK"
+		return "REST BREAK";
+	}
+
+	const currentExerciseIndex = workoutStore.activeWorkout.currentExerciseIndex;
+	const currentSet = workoutStore.activeWorkout.currentSet;
+	const isLastExercise =
+		currentExerciseIndex === workoutStore.activeWorkout.exercises.length - 1;
+	const isLastSet = currentSet >= targetSets.value;
+
+	if (isLastExercise && isLastSet) {
+		return "COMPLETE WORKOUT";
+	} else if (isLastExercise) {
+		return "REST BREAK";
+	} else {
+		return "NEXT EXERCISE";
+	}
 }
 
 const isRestTimerRunning = computed(() => {
-  return showRestTimer.value && restTimerRef.value?.isRunning;
+	return showRestTimer.value && restTimerRef.value?.isRunning;
 });
 
 // Show completion dialog when workout is complete
@@ -265,18 +262,18 @@ const isWorkoutComplete = computed(() => workoutStore.isWorkoutComplete());
 // Swipe functionality
 const swipeContainer = ref<HTMLElement | null>(null);
 useSwipe(swipeContainer, {
-  onSwipeLeft: () => {
-    if (workoutStore.canGoNext) {
-      handleNextExercise();
-    }
-  },
-  onSwipeRight: () => {
-    if (workoutStore.canGoPrevious) {
-      handlePreviousExercise();
-    }
-  },
-  threshold: 50,
-  velocity: 0.3,
+	onSwipeLeft: () => {
+		if (workoutStore.canGoNext) {
+			handleNextExercise();
+		}
+	},
+	onSwipeRight: () => {
+		if (workoutStore.canGoPrevious) {
+			handlePreviousExercise();
+		}
+	},
+	threshold: 50,
+	velocity: 0.3,
 });
 </script>
 
@@ -291,7 +288,10 @@ useSwipe(swipeContainer, {
         <div class="workout-view__complete-content">
           <h1 class="workout-view__complete-title">Workout Complete! 🎉</h1>
           <p class="workout-view__complete-message">
-            Great job completing all exercises and sets!
+            Great job completing Day {{ workoutStore.currentDay }} of Week {{ workoutStore.currentWeek }}!
+          </p>
+          <p class="workout-view__complete-submessage">
+            All exercises and sets completed successfully.
           </p>
           <BigButton
             label="Back to Dashboard"
@@ -408,7 +408,14 @@ useSwipe(swipeContainer, {
 }
 
 .workout-view__complete-message {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0;
+}
+
+.workout-view__complete-submessage {
+  font-size: var(--font-size-base);
   color: var(--color-text-secondary);
   margin: 0;
 }

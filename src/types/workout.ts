@@ -3,7 +3,7 @@
  */
 
 export type WeightUnit = 'kg' | 'lbs';
-export type WorkoutDay = 'A' | 'B';
+export type WorkoutDay = 'A' | 'B' | 'C';
 export type ExerciseTrackingType = 'weight' | 'reps' | 'time';
 
 export interface Exercise {
@@ -45,7 +45,7 @@ export interface User {
 
 export interface Program {
   currentWeek: number; // 1-12
-  currentDay: WorkoutDay; // 'A' or 'B'
+  currentDay: WorkoutDay; // 'A', 'B', or 'C'
   lastWorkoutDate: string | null; // ISO date string
   totalWorkoutsCompleted: number;
 }

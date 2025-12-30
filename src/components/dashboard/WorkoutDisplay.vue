@@ -5,7 +5,12 @@ import { useWorkoutStore } from '../../stores/workout';
 const workoutStore = useWorkoutStore();
 
 const dayDisplay = computed(() => {
-  const dayName = workoutStore.currentDay === 'A' ? 'Workout A' : 'Workout B';
+  const dayNames: Record<'A' | 'B' | 'C', string> = {
+    A: 'Workout A',
+    B: 'Workout B',
+    C: 'Workout C',
+  };
+  const dayName = dayNames[workoutStore.currentDay];
   return `Day ${workoutStore.currentDay} - ${dayName}`;
 });
 </script>

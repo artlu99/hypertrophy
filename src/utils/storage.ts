@@ -5,7 +5,7 @@
 import type { WorkoutState } from '../types/workout';
 
 const STORAGE_KEY = 'hypertrophy-state';
-const STORAGE_VERSION = '1.0.0';
+const STORAGE_VERSION = '1.0.1';
 
 interface StoredState {
   version: string;

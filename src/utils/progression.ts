@@ -92,21 +92,23 @@ export function getTargetWeight(
  * Determine if the program should advance to the next week
  * This happens when a workout is completed
  * 
- * Since all exercises (A-F) are in Workout A, advance week after completing Workout A
+ * Advance week after completing Day C (the last day of the week)
  */
 export function shouldAdvanceWeek(
-  currentDay: 'A' | 'B',
+  currentDay: 'A' | 'B' | 'C',
   workoutCompleted: boolean
 ): boolean {
-  // Advance week when completing Workout A (all exercises are in Workout A)
-  return workoutCompleted && currentDay === 'A';
+  // Advance week when completing Day C (the last day of the week)
+  return workoutCompleted && currentDay === 'C';
 }
 
 /**
- * Get the next workout day (A -> B, B -> A)
+ * Get the next workout day (A -> B -> C -> A)
  */
-export function getNextDay(currentDay: 'A' | 'B'): 'A' | 'B' {
-  return currentDay === 'A' ? 'B' : 'A';
+export function getNextDay(currentDay: 'A' | 'B' | 'C'): 'A' | 'B' | 'C' {
+  if (currentDay === 'A') return 'B';
+  if (currentDay === 'B') return 'C';
+  return 'A'; // C -> A (will trigger week advancement)
 }
 
 /**
