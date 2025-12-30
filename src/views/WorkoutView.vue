@@ -143,7 +143,6 @@ function handleCompleteSet() {
 	workoutStore.nextExercise();
 	showRestTimer.value = false;
 }
-}
 
 function handleRestComplete() {
 	// User manually clicked to proceed after rest
