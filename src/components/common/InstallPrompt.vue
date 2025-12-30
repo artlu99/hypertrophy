@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import BigButton from './BigButton.vue';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -11,6 +11,7 @@ const showPrompt = ref(false);
 const deferredPrompt = ref<BeforeInstallPromptEvent | null>(null);
 const isInstalled = ref(false);
 const isIOS = ref(false);
+let iosTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 // Detect iOS
 function detectIOS(): boolean {
@@ -20,9 +21,17 @@ function detectIOS(): boolean {
 function handleBeforeInstallPrompt(e: Event) {
   // Prevent the mini-infobar from appearing
   e.preventDefault();
-  // Store the event for later use
-  deferredPrompt.value = e as BeforeInstallPromptEvent;
-  showPrompt.value = true;
+  // Store the event for later use (only if we don't already have one)
+  if (!deferredPrompt.value) {
+    deferredPrompt.value = e as BeforeInstallPromptEvent;
+    showPrompt.value = true;
+  }
+}
+
+function handleAppInstalled() {
+  isInstalled.value = true;
+  showPrompt.value = false;
+  deferredPrompt.value = null;
 }
 
 async function handleInstallClick() {
@@ -34,19 +43,25 @@ async function handleInstallClick() {
 
   if (!deferredPrompt.value) return;
 
-  // Show the install prompt
-  deferredPrompt.value.prompt();
+  try {
+    // Show the install prompt
+    await deferredPrompt.value.prompt();
 
-  // Wait for the user to respond
-  const { outcome } = await deferredPrompt.value.userChoice;
+    // Wait for the user to respond
+    const { outcome } = await deferredPrompt.value.userChoice;
 
-  if (outcome === 'accepted') {
-    showPrompt.value = false;
-    isInstalled.value = true;
+    if (outcome === 'accepted') {
+      showPrompt.value = false;
+      isInstalled.value = true;
+    }
+  } catch (error) {
+    console.error('Error showing install prompt:', error);
+    // If prompt fails, just dismiss
+    handleDismiss();
+  } finally {
+    // Clear the deferred prompt
+    deferredPrompt.value = null;
   }
-
-  // Clear the deferred prompt
-  deferredPrompt.value = null;
 }
 
 function handleDismiss() {
@@ -79,7 +94,7 @@ onMounted(() => {
   // For iOS, show prompt after a short delay
   if (isIOS.value) {
     // Show iOS prompt after 3 seconds
-    setTimeout(() => {
+    iosTimeoutId = setTimeout(() => {
       showPrompt.value = true;
     }, 3000);
   } else {
@@ -88,11 +103,19 @@ onMounted(() => {
   }
 
   // Check if app is already installed
-  window.addEventListener('appinstalled', () => {
-    isInstalled.value = true;
-    showPrompt.value = false;
-    deferredPrompt.value = null;
-  });
+  window.addEventListener('appinstalled', handleAppInstalled);
+});
+
+onUnmounted(() => {
+  // Clean up event listeners
+  window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  window.removeEventListener('appinstalled', handleAppInstalled);
+  
+  // Clear timeout if it exists
+  if (iosTimeoutId) {
+    clearTimeout(iosTimeoutId);
+    iosTimeoutId = null;
+  }
 });
 </script>
 

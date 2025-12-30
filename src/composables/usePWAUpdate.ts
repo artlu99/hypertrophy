@@ -20,6 +20,10 @@ const updateInfo = ref<UpdateInfo>({
 });
 
 let updateFoundHandler: ((registration: ServiceWorkerRegistration) => void) | null = null;
+let updateFoundListener: ((event: Event) => void) | null = null;
+let stateChangeListener: ((event: Event) => void) | null = null;
+let controllerChangeListener: (() => void) | null = null;
+let currentRegistration: ServiceWorkerRegistration | null = null;
 
 /**
  * Check if running as a PWA on iOS
@@ -47,17 +51,18 @@ export async function registerUpdateDetection(): Promise<void> {
 
   try {
     const registration = await navigator.serviceWorker.ready;
+    currentRegistration = registration;
     updateInfo.value.registration = registration;
 
     // Check for updates immediately
     await registration.update();
 
     // Listen for updates
-    registration.addEventListener('updatefound', () => {
+    updateFoundListener = () => {
       const newWorker = registration.installing;
       if (!newWorker) return;
 
-      newWorker.addEventListener('statechange', () => {
+      stateChangeListener = () => {
         if (newWorker.state === 'installed') {
           // New service worker is installed and waiting
           if (navigator.serviceWorker.controller) {
@@ -70,18 +75,44 @@ export async function registerUpdateDetection(): Promise<void> {
             }
           }
         }
-      });
-    });
+      };
+      
+      newWorker.addEventListener('statechange', stateChangeListener);
+    };
+
+    registration.addEventListener('updatefound', updateFoundListener);
 
     // Listen for controller change (service worker activated)
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
+    controllerChangeListener = () => {
       // Service worker has been updated and activated
       updateInfo.value.available = false;
       updateInfo.value.waiting = false;
-    });
+    };
+    
+    navigator.serviceWorker.addEventListener('controllerchange', controllerChangeListener);
   } catch (error) {
     console.error('Failed to register service worker update detection:', error);
   }
+}
+
+/**
+ * Unregister service worker update detection
+ */
+export function unregisterUpdateDetection(): void {
+  if (currentRegistration && updateFoundListener) {
+    currentRegistration.removeEventListener('updatefound', updateFoundListener);
+    updateFoundListener = null;
+  }
+  
+  if (controllerChangeListener) {
+    navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeListener);
+    controllerChangeListener = null;
+  }
+  
+  // Note: stateChangeListener is attached to a specific worker instance,
+  // which will be cleaned up when the worker is replaced
+  stateChangeListener = null;
+  currentRegistration = null;
 }
 
 /**
@@ -155,6 +186,7 @@ export function usePWAUpdate() {
   });
 
   onUnmounted(() => {
+    unregisterUpdateDetection();
     updateFoundHandler = null;
   });
 
