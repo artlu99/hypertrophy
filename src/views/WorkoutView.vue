@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import BigButton from "../components/common/BigButton.vue";
-import type RestTimer from "../components/common/RestTimer.vue";
+import RestTimer from "../components/common/RestTimer.vue";
 import AppLayout from "../components/layout/AppLayout.vue";
 import ScreenContainer from "../components/layout/ScreenContainer.vue";
 import ExerciseCard from "../components/workout/ExerciseCard.vue";
@@ -13,6 +13,7 @@ const router = useRouter();
 const workoutStore = useWorkoutStore();
 
 const showRestTimer = ref(false);
+const restTimerExerciseName = ref<string | null>(null);
 const wakeLock = ref<WakeLockSentinel | null>(null);
 const restTimerRef = ref<InstanceType<typeof RestTimer> | null>(null);
 
@@ -140,13 +141,28 @@ function handleCompleteSet() {
 
 	workoutStore.completeSet(weight, reps, time);
 
-	workoutStore.nextExercise();
-	showRestTimer.value = false;
-}
+	if (isLastExercise && isLastSet) {
+		// We just completed the last exercise of the last set - workout is complete
+		// The success screen will be shown automatically via isWorkoutComplete computed property
+		return;
+	}
 
+	if (isLastExercise) {
+		// We just completed the last exercise of the current set
+		// Show rest timer after completing all exercises in the set
+		// Store the exercise name for rest duration calculation
+		restTimerExerciseName.value = currentExercise.value?.name || null;
+		showRestTimer.value = true;
+	} else {
+		// Move to next exercise in the same set
+		workoutStore.nextExercise();
+		showRestTimer.value = false;
+	}
+}
 function handleRestComplete() {
 	// User manually clicked to proceed after rest
 	showRestTimer.value = false;
+	restTimerExerciseName.value = null;
 	// Move to next set (first exercise)
 	workoutStore.nextExercise();
 }
@@ -178,7 +194,13 @@ async function handleRestBreak() {
 }
 
 const restDurationForExercise = computed(() => {
-	if (!currentExercise.value) return 90;
+	// Use stored exercise name if rest timer is showing, otherwise use current exercise
+	const exerciseName = showRestTimer.value && restTimerExerciseName.value
+		? restTimerExerciseName.value
+		: currentExercise.value?.name;
+	
+	if (!exerciseName) return 90;
+	
 	// Main lifts: compound movements that require longer rest
 	const mainLifts = [
 		"Squat",
@@ -190,7 +212,7 @@ const restDurationForExercise = computed(() => {
 		"Dumbbell Romanian Deadlift",
 		"Dumbbell Bent-Over Row",
 	];
-	const isMainLift = mainLifts.includes(currentExercise.value.name);
+	const isMainLift = mainLifts.includes(exerciseName);
 	// Main lifts: 3 minutes (180s), Accessory: 90 seconds
 	return isMainLift ? 180 : 90;
 });
@@ -198,11 +220,13 @@ const restDurationForExercise = computed(() => {
 function handleNextExercise() {
 	workoutStore.nextExercise();
 	showRestTimer.value = false;
+	restTimerExerciseName.value = null;
 }
 
 function handlePreviousExercise() {
 	workoutStore.previousExercise();
 	showRestTimer.value = false;
+	restTimerExerciseName.value = null;
 }
 
 function handleWorkoutComplete() {
@@ -301,7 +325,7 @@ useSwipe(swipeContainer, {
         </div>
       </div>
 
-      <div v-else-if="currentExercise && exerciseProgress" ref="swipeContainer" class="workout-view__active">
+      <div v-else ref="swipeContainer" class="workout-view__active">
         <div class="workout-view__header">
           <button
             class="workout-view__nav-button"
@@ -338,7 +362,7 @@ useSwipe(swipeContainer, {
               />
             </div>
             <ExerciseCard
-              v-else
+              v-else-if="currentExercise && exerciseProgress"
               :key="currentExercise.id"
               :exercise="currentExercise"
               :target-weight="targetWeight"

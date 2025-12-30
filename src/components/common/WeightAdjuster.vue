@@ -120,6 +120,7 @@ function decrement() {
 
 .weight-adjuster__button {
   flex: 1;
+  min-width: 120px;
   min-height: 64px;
   display: flex;
   align-items: center;
