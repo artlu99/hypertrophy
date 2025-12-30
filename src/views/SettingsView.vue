@@ -1,130 +1,144 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { useSwipe } from "../composables/useSwipe";
 import BigButton from "../components/common/BigButton.vue";
 import RepsAdjuster from "../components/common/RepsAdjuster.vue";
+import SlideDrawer from "../components/common/SlideDrawer.vue";
 import WeightAdjuster from "../components/common/WeightAdjuster.vue";
 import AppLayout from "../components/layout/AppLayout.vue";
 import ScreenContainer from "../components/layout/ScreenContainer.vue";
-import SlideDrawer from "../components/common/SlideDrawer.vue";
+import { usePWAUpdate } from "../composables/usePWAUpdate";
+import { useSwipe } from "../composables/useSwipe";
 import { useWorkoutStore } from "../stores/workout";
 
 const router = useRouter();
 const workoutStore = useWorkoutStore();
 
+// PWA update detection
+const {
+	updateInfo,
+	isIOSPWA,
+	checkForUpdates,
+	reloadApp,
+	skipWaitingAndReload,
+} = usePWAUpdate();
+
 // Drawer state
 const drawerOpen = ref(false);
-const selectedCategory = ref<'exercises' | 'unit' | 'backup' | 'program'>('exercises');
+const selectedCategory = ref<"exercises" | "unit" | "backup" | "program">(
+	"exercises",
+);
 
 // Exercise carousel state
 const currentExerciseIndex = ref(0);
 const exerciseCarouselRef = ref<HTMLElement | null>(null);
 
-const currentExercise = computed(() => exerciseSettings.value[currentExerciseIndex.value]);
+const currentExercise = computed(
+	() => exerciseSettings.value[currentExerciseIndex.value],
+);
 
 const unit = ref(workoutStore.unit);
 const exerciseSettings = ref(
-  workoutStore.exercises.map((ex) => ({
-    id: ex.id,
-    name: ex.name,
-    trackingType: ex.trackingType || "weight",
-    baseWeight: ex.baseWeight,
-    baseReps: ex.baseReps,
-    baseTime: ex.baseTime,
-  })),
+	workoutStore.exercises.map((ex) => ({
+		id: ex.id,
+		name: ex.name,
+		trackingType: ex.trackingType || "weight",
+		baseWeight: ex.baseWeight,
+		baseReps: ex.baseReps,
+		baseTime: ex.baseTime,
+	})),
 );
 
 const hasChanges = computed(() => {
-  if (unit.value !== workoutStore.unit) return true;
-  return exerciseSettings.value.some((ex) => {
-    const original = workoutStore.exercises.find((e) => e.id === ex.id);
-    if (!original) return false;
-    return (
-      ex.baseWeight !== original.baseWeight ||
-      ex.baseReps !== original.baseReps ||
-      ex.baseTime !== original.baseTime
-    );
-  });
+	if (unit.value !== workoutStore.unit) return true;
+	return exerciseSettings.value.some((ex) => {
+		const original = workoutStore.exercises.find((e) => e.id === ex.id);
+		if (!original) return false;
+		return (
+			ex.baseWeight !== original.baseWeight ||
+			ex.baseReps !== original.baseReps ||
+			ex.baseTime !== original.baseTime
+		);
+	});
 });
 
 function handleUnitChange(newUnit: "kg" | "lbs") {
-  unit.value = newUnit;
+	unit.value = newUnit;
 }
 
 function handleWeightChange(exerciseId: number, weight: number) {
-  const exercise = exerciseSettings.value.find((ex) => ex.id === exerciseId);
-  if (exercise) {
-    exercise.baseWeight = weight;
-  }
+	const exercise = exerciseSettings.value.find((ex) => ex.id === exerciseId);
+	if (exercise) {
+		exercise.baseWeight = weight;
+	}
 }
 
 function handleRepsChange(exerciseId: number, reps: number) {
-  const exercise = exerciseSettings.value.find((ex) => ex.id === exerciseId);
-  if (exercise) {
-    exercise.baseReps = reps;
-  }
+	const exercise = exerciseSettings.value.find((ex) => ex.id === exerciseId);
+	if (exercise) {
+		exercise.baseReps = reps;
+	}
 }
 
 function handleTimeChange(exerciseId: number, time: number) {
-  const exercise = exerciseSettings.value.find((ex) => ex.id === exerciseId);
-  if (exercise) {
-    exercise.baseTime = time;
-  }
+	const exercise = exerciseSettings.value.find((ex) => ex.id === exerciseId);
+	if (exercise) {
+		exercise.baseTime = time;
+	}
 }
 
 function handleSave() {
-  // Update unit
-  if (unit.value !== workoutStore.unit) {
-    workoutStore.updateUser(workoutStore.user.name, unit.value);
-  }
+	// Update unit
+	if (unit.value !== workoutStore.unit) {
+		workoutStore.updateUser(workoutStore.user.name, unit.value);
+	}
 
-  // Update exercise settings based on tracking type
-  exerciseSettings.value.forEach((ex) => {
-    const original = workoutStore.exercises.find((e) => e.id === ex.id);
-    if (!original) return;
+	// Update exercise settings based on tracking type
+	exerciseSettings.value.forEach((ex) => {
+		const original = workoutStore.exercises.find((e) => e.id === ex.id);
+		if (!original) return;
 
-    if (ex.trackingType === "weight" && ex.baseWeight !== original.baseWeight) {
-      workoutStore.updateExerciseBaseWeight(ex.id, ex.baseWeight);
-    } else if (
-      ex.trackingType === "reps" &&
-      ex.baseReps !== original.baseReps
-    ) {
-      workoutStore.updateExerciseBaseReps(ex.id, ex.baseReps || 10);
-    } else if (
-      ex.trackingType === "time" &&
-      ex.baseTime !== original.baseTime
-    ) {
-      workoutStore.updateExerciseBaseTime(ex.id, ex.baseTime || 30);
-    }
-  });
+		if (ex.trackingType === "weight" && ex.baseWeight !== original.baseWeight) {
+			workoutStore.updateExerciseBaseWeight(ex.id, ex.baseWeight);
+		} else if (
+			ex.trackingType === "reps" &&
+			ex.baseReps !== original.baseReps
+		) {
+			workoutStore.updateExerciseBaseReps(ex.id, ex.baseReps || 10);
+		} else if (
+			ex.trackingType === "time" &&
+			ex.baseTime !== original.baseTime
+		) {
+			workoutStore.updateExerciseBaseTime(ex.id, ex.baseTime || 30);
+		}
+	});
 
-  router.push("/");
+	router.push("/");
 }
 
 function handleReset() {
-  if (
-    confirm(
-      "Are you sure you want to reset the program? This will reset all progress, workout history, and starting weights. This action cannot be undone.",
-    )
-  ) {
-    workoutStore.resetProgram();
-    // Reset local state
-    unit.value = workoutStore.unit;
-    exerciseSettings.value = workoutStore.exercises.map((ex) => ({
-      id: ex.id,
-      name: ex.name,
-      trackingType: ex.trackingType || "weight",
-      baseWeight: ex.baseWeight,
-      baseReps: ex.baseReps,
-      baseTime: ex.baseTime,
-    }));
-    router.push("/");
-  }
+	if (
+		confirm(
+			"Are you sure you want to reset the program? This will reset all progress, workout history, and starting weights. This action cannot be undone.",
+		)
+	) {
+		workoutStore.resetProgram();
+		// Reset local state
+		unit.value = workoutStore.unit;
+		exerciseSettings.value = workoutStore.exercises.map((ex) => ({
+			id: ex.id,
+			name: ex.name,
+			trackingType: ex.trackingType || "weight",
+			baseWeight: ex.baseWeight,
+			baseReps: ex.baseReps,
+			baseTime: ex.baseTime,
+		}));
+		router.push("/");
+	}
 }
 
 function handleCancel() {
-  router.push("/");
+	router.push("/");
 }
 
 // Export/Import functionality
@@ -134,121 +148,121 @@ const importSuccess = ref(false);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 
 function handleExport() {
-  try {
-    const jsonData = workoutStore.exportData();
-    const blob = new Blob([jsonData], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `hypertrophy-backup-${new Date().toISOString().split("T")[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error("Export failed:", error);
-    importError.value = "Failed to export data. Please try again.";
-  }
+	try {
+		const jsonData = workoutStore.exportData();
+		const blob = new Blob([jsonData], { type: "application/json" });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = `hypertrophy-backup-${new Date().toISOString().split("T")[0]}.json`;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+	} catch (error) {
+		console.error("Export failed:", error);
+		importError.value = "Failed to export data. Please try again.";
+	}
 }
 
 function handleFileSelect(event: Event) {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (!file) return;
+	const target = event.target as HTMLInputElement;
+	const file = target.files?.[0];
+	if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const text = e.target?.result as string;
-    importText.value = text;
-    handleImport(text);
-  };
-  reader.onerror = () => {
-    importError.value = "Failed to read file. Please try again.";
-  };
-  reader.readAsText(file);
+	const reader = new FileReader();
+	reader.onload = (e) => {
+		const text = e.target?.result as string;
+		importText.value = text;
+		handleImport(text);
+	};
+	reader.onerror = () => {
+		importError.value = "Failed to read file. Please try again.";
+	};
+	reader.readAsText(file);
 }
 
 function handleImportFromText() {
-  if (!importText.value.trim()) {
-    importError.value = "Please paste JSON data or select a file.";
-    return;
-  }
-  handleImport(importText.value);
+	if (!importText.value.trim()) {
+		importError.value = "Please paste JSON data or select a file.";
+		return;
+	}
+	handleImport(importText.value);
 }
 
 function handleImport(json: string) {
-  importError.value = null;
-  importSuccess.value = false;
+	importError.value = null;
+	importSuccess.value = false;
 
-  if (!json.trim()) {
-    importError.value = "Please provide JSON data.";
-    return;
-  }
+	if (!json.trim()) {
+		importError.value = "Please provide JSON data.";
+		return;
+	}
 
-  const result = workoutStore.importData(json);
-  if (result.success) {
-    importSuccess.value = true;
-    importText.value = "";
-    // Reset file input
-    if (fileInputRef.value) {
-      fileInputRef.value.value = "";
-    }
-    // Reset local state to match imported data
-    unit.value = workoutStore.unit;
-    exerciseSettings.value = workoutStore.exercises.map((ex) => ({
-      id: ex.id,
-      name: ex.name,
-      trackingType: ex.trackingType || "weight",
-      baseWeight: ex.baseWeight,
-      baseReps: ex.baseReps,
-      baseTime: ex.baseTime,
-    }));
-    // Clear success message after 3 seconds
-    setTimeout(() => {
-      importSuccess.value = false;
-    }, 3000);
-  } else {
-    importError.value = result.error || "Failed to import data.";
-  }
+	const result = workoutStore.importData(json);
+	if (result.success) {
+		importSuccess.value = true;
+		importText.value = "";
+		// Reset file input
+		if (fileInputRef.value) {
+			fileInputRef.value.value = "";
+		}
+		// Reset local state to match imported data
+		unit.value = workoutStore.unit;
+		exerciseSettings.value = workoutStore.exercises.map((ex) => ({
+			id: ex.id,
+			name: ex.name,
+			trackingType: ex.trackingType || "weight",
+			baseWeight: ex.baseWeight,
+			baseReps: ex.baseReps,
+			baseTime: ex.baseTime,
+		}));
+		// Clear success message after 3 seconds
+		setTimeout(() => {
+			importSuccess.value = false;
+		}, 3000);
+	} else {
+		importError.value = result.error || "Failed to import data.";
+	}
 }
 
 // Swipe functionality for exercise carousel
 useSwipe(exerciseCarouselRef, {
-  onSwipeLeft: () => {
-    if (currentExerciseIndex.value < exerciseSettings.value.length - 1) {
-      currentExerciseIndex.value++;
-    }
-  },
-  onSwipeRight: () => {
-    if (currentExerciseIndex.value > 0) {
-      currentExerciseIndex.value--;
-    }
-  },
-  threshold: 50,
-  velocity: 0.3,
+	onSwipeLeft: () => {
+		if (currentExerciseIndex.value < exerciseSettings.value.length - 1) {
+			currentExerciseIndex.value++;
+		}
+	},
+	onSwipeRight: () => {
+		if (currentExerciseIndex.value > 0) {
+			currentExerciseIndex.value--;
+		}
+	},
+	threshold: 50,
+	velocity: 0.3,
 });
 
-function selectCategory(category: 'exercises' | 'unit' | 'backup' | 'program') {
-  selectedCategory.value = category;
-  drawerOpen.value = false;
+function selectCategory(category: "exercises" | "unit" | "backup" | "program") {
+	selectedCategory.value = category;
+	drawerOpen.value = false;
 }
 
 // Reset local state if user navigates away without saving
 watch(
-  () => router.currentRoute.value.path,
-  () => {
-    if (router.currentRoute.value.path !== "/settings") {
-      unit.value = workoutStore.unit;
-      exerciseSettings.value = workoutStore.exercises.map((ex) => ({
-        id: ex.id,
-        name: ex.name,
-        trackingType: ex.trackingType || "weight",
-        baseWeight: ex.baseWeight,
-        baseReps: ex.baseReps,
-        baseTime: ex.baseTime,
-      }));
-    }
-  },
+	() => router.currentRoute.value.path,
+	() => {
+		if (router.currentRoute.value.path !== "/settings") {
+			unit.value = workoutStore.unit;
+			exerciseSettings.value = workoutStore.exercises.map((ex) => ({
+				id: ex.id,
+				name: ex.name,
+				trackingType: ex.trackingType || "weight",
+				baseWeight: ex.baseWeight,
+				baseReps: ex.baseReps,
+				baseTime: ex.baseTime,
+			}));
+		}
+	},
 );
 </script>
 
@@ -425,6 +439,24 @@ watch(
               </span>
             </div>
           </div>
+          
+          <div class="settings-view__app-update" v-if="isIOSPWA || updateInfo.available">
+            <h3 class="settings-view__update-title">App Update</h3>
+            <p class="settings-view__update-description" v-if="isIOSPWA">
+              On iOS, refresh the app to get the latest version. Your data will be preserved.
+            </p>
+            <p class="settings-view__update-description" v-else-if="updateInfo.available">
+              A new version is available. Refresh to update.
+            </p>
+            <BigButton 
+              :label="updateInfo.waiting ? 'Update Now' : 'Refresh App'" 
+              variant="secondary" 
+              size="md" 
+              full-width 
+              @click="updateInfo.waiting ? skipWaitingAndReload() : reloadApp()" 
+            />
+          </div>
+          
           <BigButton label="Reset Program" variant="danger" size="md" full-width @click="handleReset" />
           <p class="settings-view__warning">
             ⚠️ Resetting will clear all workout history and reset progress to week 1, day A.
@@ -513,8 +545,13 @@ watch(
 .settings-view__section--exercises {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: 0;
   overflow: hidden;
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
 }
 
 .settings-view__section-title {
@@ -699,6 +736,31 @@ watch(
   color: var(--color-warning);
   margin: var(--spacing-md) 0 0 0;
   text-align: center;
+}
+
+.settings-view__app-update {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background-color: var(--color-bg-primary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.settings-view__update-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.settings-view__update-description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: var(--line-height-relaxed);
 }
 
 .settings-view__backup-actions {
@@ -978,6 +1040,10 @@ watch(
 @media (min-width: 768px) {
   .settings-view__section {
     padding: var(--spacing-xl);
+  }
+
+  .settings-view__section--exercises {
+    padding: 0;
   }
 
   .settings-view__section-title {
