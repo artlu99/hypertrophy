@@ -137,11 +137,12 @@ function handleCompleteSet() {
 	const currentSet = workoutStore.activeWorkout!.currentSet;
 	const isLastExercise =
 		currentExerciseIndex === workoutStore.activeWorkout!.exercises.length - 1;
-	const isLastSet = currentSet >= targetSets.value;
 
+	// Complete the set first
 	workoutStore.completeSet(weight, reps, time);
 
-	if (isLastExercise && isLastSet) {
+	// Check if workout is complete AFTER completing the set
+	if (workoutStore.isWorkoutComplete()) {
 		// We just completed the last exercise of the last set - workout is complete
 		// The success screen will be shown automatically via isWorkoutComplete computed property
 		return;
