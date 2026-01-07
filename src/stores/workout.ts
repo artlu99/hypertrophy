@@ -418,23 +418,12 @@ export const useWorkoutStore = defineStore("workout", () => {
 
   function isWorkoutComplete(): boolean {
     if (!activeWorkout.value) return false;
-    const workout = activeWorkout.value;
     const targetSets = getTargetSetsForWeek();
     
-    // A workout is complete ONLY when ALL exercises have completed EXACTLY targetSets sets
-    // Check each exercise directly - no external conditions, just count the sets
-    for (const exercise of workout.exercises) {
-      const completedEx = workout.completedExercises.find(
-        (ce) => ce.exerciseId === exercise.id,
-      );
-      // If exercise not found in completed exercises, workout is not complete
-      if (!completedEx) return false;
-      // If exercise has fewer sets than target, workout is not complete
-      if (completedEx.sets.length < targetSets) return false;
-    }
-    
-    // Only return true if we've verified every exercise has completed all sets
-    return true;
+    // Complete when every exercise has completed all required sets
+    return activeWorkout.value.completedExercises.every(
+      (ex) => ex.sets.length >= targetSets
+    );
   }
 
   function finishWorkout() {
