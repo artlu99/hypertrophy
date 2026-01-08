@@ -311,6 +311,12 @@ export const useWorkoutStore = defineStore("workout", () => {
     );
     if (!completedEx) return;
 
+    // Guard: Prevent double-recording the same set
+    // If this exercise already has a set recorded for the current set number, skip
+    if (completedEx.sets.length >= activeWorkout.value.currentSet) {
+      return;
+    }
+
     // Determine actual values based on tracking type
     const trackingType = currentEx.trackingType || 'weight';
     let actualWeight = weight;

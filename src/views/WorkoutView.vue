@@ -9,6 +9,8 @@ import ExerciseCard from "../components/workout/ExerciseCard.vue";
 import { useSwipe } from "../composables/useSwipe";
 import { useWorkoutStore } from "../stores/workout";
 
+const DEFAULT_REST_DURATION = 5;
+
 const router = useRouter();
 const workoutStore = useWorkoutStore();
 
@@ -200,7 +202,7 @@ const restDurationForExercise = computed(() => {
 		? restTimerExerciseName.value
 		: currentExercise.value?.name;
 	
-	if (!exerciseName) return 90;
+	if (!exerciseName) return DEFAULT_REST_DURATION;
 	
 	// Main lifts: compound movements that require longer rest
 	const mainLifts = [
@@ -215,7 +217,7 @@ const restDurationForExercise = computed(() => {
 	];
 	const isMainLift = mainLifts.includes(exerciseName);
 	// Main lifts: 3 minutes (180s), Accessory: 90 seconds
-	return isMainLift ? 180 : 90;
+	return DEFAULT_REST_DURATION * (isMainLift ? 2 : 1);
 });
 
 function handleNextExercise() {

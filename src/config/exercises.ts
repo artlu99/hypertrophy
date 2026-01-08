@@ -3,7 +3,7 @@
  * Based on the 12 Week Plan from WORKOUT.md
  */
 
-import type { Exercise } from '../types/workout';
+import type { Exercise, WorkoutDay } from '../types/workout';
 
 /**
  * Default exercises for the 12-week hypertrophy program
@@ -47,7 +47,7 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'currentWeight'>[] = [
  */
 export function getExercisesForDay(
   exercises: Exercise[],
-  day: 'A' | 'B' | 'C'
+  day: WorkoutDay,
 ): Exercise[] {
   return exercises.filter((ex) => ex.workoutDay === day);
 }
